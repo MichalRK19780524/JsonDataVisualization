@@ -2,17 +2,26 @@ from os import times
 
 import msgspec
 from matplotlib import pyplot as plt
-from enum import Enum
+from enum import Flag, auto
 
-class Mode(Enum):
+class Mode(Flag):
+    I = auto()
+    U = auto()
+    T = auto()
 
 
-def read_file(file_path, mode=0):
+class Type(Flag):
+    MASTER = auto()
+    SLAVE = auto()
+
+def read_file(file_path, mode=Mode.U, sipm_type=Type.MASTER | Type.SLAVE):
     decoder = msgspec.json.Decoder()
     with open(file_path, 'r') as file:
         # counter = 0
         timestamp_slave = []
         u_sipm_slave = []
+        timestamp_master = []
+        u_sipm_master = []
         for line in file:
             try:
                 result = decoder.decode(line)
@@ -26,18 +35,28 @@ def read_file(file_path, mode=0):
                     # if( "timestamp_ms" in average_data):
                     #     print(average_data)
                     #     print(average_data.get("timestamp_ms"))
-                    if('U_SIPM_MEAS1' in average_data):
-                        # print(average_data)
-                        timestamp_slave.append(average_data.get("timestamp_ms"))
-                        u_sipm_slave.append(average_data.get("U_SIPM_MEAS1"))
-    return timestamp_slave, u_sipm_slave
+                    if(Type.SLAVE in sipm_type):
+                        if('U_SIPM_MEAS1' in average_data):
+                            # print(average_data)
+                            timestamp_slave.append(average_data.get("timestamp_ms"))
+                            u_sipm_slave.append(average_data.get("U_SIPM_MEAS1"))
+                    if(Type.MASTER in sipm_type):
+                        if('U_SIPM_MEAS0' in average_data):
+                            # print(average_data)
+                            timestamp_master.append(average_data.get("timestamp_ms"))
+                            u_sipm_master.append(average_data.get("U_SIPM_MEAS0"))
+    return timestamp_master, u_sipm_master, timestamp_slave, u_sipm_slave
 
 if __name__ == "__main__":
-    timestamp_slave, u_sipm_slave = read_file("log_18.json")
-    fig, ax = plt.subplots()
-    ax.plot(timestamp_slave, u_sipm_slave)
-    ax.set_ylim(55.0, 55.25)
-    ax.set_xlim(left=500000)
+    timestamp_master, u_sipm_master, timestamp_slave, u_sipm_slave = read_file("log_18.json")
+    fig_master, ax_master = plt.subplots()
+    ax_master.plot(timestamp_master, u_sipm_master)
+    # ax_master.set_ylim(55.0, 55.25)
+    # ax_master.set_xlim(left=500000)
+    fig_slave, ax_slave = plt.subplots()
+    ax_slave.plot(timestamp_slave, u_sipm_slave)
+    ax_slave.set_ylim(55.0, 55.25)
+    ax_slave.set_xlim(left=500000)
     # ax.set(xlabel='time (ms)', ylabel='U_SIPM_MEAS1 (V)',
     #        title='U_SIPM_MEAS1 vs time'
     # )
