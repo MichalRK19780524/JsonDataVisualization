@@ -40,6 +40,25 @@ class AFEParameters:
         self.avg_number = avg_number
         self.v_br = v_br
 
+    def __repr__(self):
+        return (f"AFEParameters("
+                f"v_opt={self.v_opt}, "
+                f"t_opt={self.t_opt}, "
+                f"u_measured_b={self.u_measured_b}, "
+                f"dv_dt={self.dv_dt}, "
+                f"u_set_b={self.u_set_b}, "
+                f"t_measured_a={self.t_measured_a}, "
+                f"dt={self.dt}, "
+                f"u_set_a={self.u_set_a}, "
+                f"t_measured_b={self.t_measured_b}, "
+                f"u_measured_a={self.u_measured_a}, "
+                f"i_measured_b={self.i_measured_b}, "
+                f"i_measured_a={self.i_measured_a}, "
+                f"offset={self.offset}, "
+                f"t_br={self.t_br}, "
+                f"avg_number={self.avg_number}, "
+                f"v_br={self.v_br})")
+
 class MeasurementParameters:
     def __init__(self, id: int=0, afeMaster: AFEParameters=AFEParameters, afeSlave: AFEParameters=AFEParameters):
         self.id = id
