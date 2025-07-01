@@ -290,19 +290,30 @@ if __name__ == "__main__":
         counter += 1
     np_t_timestamp_master_h = plot_data.t_timestamp_master / 1000 / 3600
     fig, ax_temperature = plt.subplots()
-    ax_temperature.plot(time_series, binder_data_df['Value'], np_t_timestamp_master_h, plot_data.t_sipm_master)
+    ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
+    ax_temperature.plot(np_t_timestamp_master_h, plot_data.t_sipm_master, label='SiPM Master Temperature', color='orange')
     ax_temperature.set_xlabel('time [h]')
     ax_temperature.set_ylabel('Temperature [°C]')
     ax_temperature.set_title("Binder Temperature and SiPM Temperature")
     ax_temperature.set_xlim(left=-2, right=24)
     ax_temperature.grid(True)
     ax_voltage = ax_temperature.twinx()
+    # ax_temperature.legend(loc='lower center')
+    np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
+    ax_temperature.set_xlabel('time [h]')
+    ax_temperature.set_ylabel('Temperature [°C]')
+    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
+    ax_temperature.set_xlim(left=-2, right=24)
+    ax_temperature.grid(True)
+    ax_voltage = ax_temperature.twinx()
+    # ax_temperature.legend(loc='lower center')
     np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
     mask = plot_data.u_sipm_master > 48
     np_u_timestamp_master_h = np_u_timestamp_master_h[mask]
     plot_data.u_sipm_master = plot_data.u_sipm_master[mask]
     ax_voltage.set_ylabel('Voltage [V]')
-    ax_voltage.plot(np_u_timestamp_master_h, plot_data.u_sipm_master)
+    ax_voltage.plot(np_u_timestamp_master_h, plot_data.u_sipm_master, label='SiPM Voltage Master', color='blue')
+    fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
     plt.show()
     # fig_master_u, ax_master_u = plt.subplots()
     # ax_master_u.plot(plot_data.u_timestamp_master, plot_data.u_sipm_master)
