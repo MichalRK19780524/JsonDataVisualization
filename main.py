@@ -1,5 +1,6 @@
 # from os import times
-from os import times_result
+import os
+from typing import List
 
 import msgspec
 from matplotlib import pyplot as plt
@@ -7,6 +8,7 @@ from enum import Flag, auto
 import pandas as pd
 import numpy as np
 from IPython.display import display
+from pathlib import Path
 
 # from matplotlib.pyplot import plot_date
 
@@ -82,20 +84,26 @@ class MeasurementParameters:
                 f"afeSlave={self.afeSlave}")
 
 class PlotData:
-    def __init__(self, u_timestamp_master, u_sipm_master, i_timestamp_master, i_sipm_master, t_timestamp_master,
-                 t_sipm_master, u_timestamp_slave, u_sipm_slave, i_timestamp_slave, i_sipm_slave, t_timestamp_slave, t_sipm_slave,
+    def __init__(self, u_timestamp_master, rtc_u_timestamp_master, u_sipm_master, i_timestamp_master, rtc_i_timestamp_master, i_sipm_master, t_timestamp_master, rtc_t_timestamp_master,
+                 t_sipm_master, u_timestamp_slave, rtc_u_timestamp_slave, u_sipm_slave, i_timestamp_slave, rtc_i_timestamp_slave, i_sipm_slave, t_timestamp_slave, rtc_t_timestamp_slave, t_sipm_slave,
                  measurement_parameters: MeasurementParameters):
         self.u_timestamp_master = u_timestamp_master
+        self.rtc_u_timestamp_master = rtc_u_timestamp_master
         self.u_sipm_master = u_sipm_master
         self.i_timestamp_master = i_timestamp_master
+        self.rtc_i_timestamp_master = rtc_i_timestamp_master
         self.i_sipm_master = i_sipm_master
         self.t_timestamp_master = t_timestamp_master
+        self.rtc_t_timestamp_master = rtc_t_timestamp_master
         self.t_sipm_master = t_sipm_master
         self.u_timestamp_slave = u_timestamp_slave
+        self.rtc_u_timestamp_slave = rtc_u_timestamp_slave
         self.u_sipm_slave = u_sipm_slave
         self.i_timestamp_slave = i_timestamp_slave
+        self.rtc_i_timestamp_slave = rtc_i_timestamp_slave
         self.i_sipm_slave = i_sipm_slave
         self.t_timestamp_slave = t_timestamp_slave
+        self.rtc_t_timestamp_slave = rtc_t_timestamp_slave
         self.t_sipm_slave = t_sipm_slave
         self.measurement_parameters = measurement_parameters
 
@@ -103,16 +111,22 @@ class PlotData:
     def __repr__(self):
         return (f"PlotData("
             f"u_timestamp_master={self.u_timestamp_master}, "
+            f"rtc_u_timestamp_master={self.rtc_u_timestamp_master}, "
             f"u_sipm_master={self.u_sipm_master}, "
             f"i_timestamp_master={self.i_timestamp_master}, "
+            f"rtc_i_timestamp_master={self.rtc_i_timestamp_master}, "
             f"i_sipm_master={self.i_sipm_master}, "
             f"t_timestamp_master={self.t_timestamp_master}, "
+            f"rtc_t_timestamp_master={self.rtc_t_timestamp_master}, "
             f"t_sipm_master={self.t_sipm_master}, "
             f"u_timestamp_slave={self.u_timestamp_slave}, "
+            f"rtc_u_timestamp_slave={self.rtc_u_timestamp_slave}, "
             f"u_sipm_slave={self.u_sipm_slave}, "
             f"i_timestamp_slave={self.i_timestamp_slave}, "
+            f"rtc_i_timestamp_slave={self.rtc_i_timestamp_slave}, "
             f"i_sipm_slave={self.i_sipm_slave}, "
             f"t_timestamp_slave={self.t_timestamp_slave}, "
+            f"rtc_t_timestamp_slave={self.rtc_t_timestamp_slave}, "
             f"t_sipm_slave={self.t_sipm_slave}, "
             f"measurement_parameters={self.measurement_parameters})")
 
@@ -120,15 +134,21 @@ class PlotData:
         return (f"PlotData:\n"
                 f"  Master SiPM:\n"
                 f"    Timestamps U: {self.u_timestamp_master}\n"
+                f"    RTC Timestamps U: {self.rtc_u_timestamp_master}\n"
                 f"    Timestamps I: {self.i_timestamp_master}\n"
+                f"    RTC Timestamps I: {self.rtc_i_timestamp_master}\n"
                 f"    Timestamps T: {self.t_timestamp_master}\n"
+                f"    RTC Timestamps T: {self.rtc_t_timestamp_master}\n"
                 f"    Voltage: {self.u_sipm_master}\n"
                 f"    Current: {self.i_sipm_master}\n"
                 f"    Temperature: {self.t_sipm_master}\n"
                 f"  Slave SiPM:\n"
                 f"    Timestamps U: {self.u_timestamp_slave}\n"
+                f"    RTC Timestamps U: {self.rtc_u_timestamp_slave}\n"
                 f"    Timestamps I: {self.i_timestamp_slave}\n"
+                f"    RTC Timestamps I: {self.rtc_i_timestamp_slave}\n"
                 f"    Timestamps T: {self.t_timestamp_slave}\n"
+                f"    RTC Timestamps T: {self.rtc_t_timestamp_slave}\n"
                 f"    Voltage: {self.u_sipm_slave}\n"
                 f"    Current: {self.i_sipm_slave}\n"
                 f"    Temperature: {self.t_sipm_slave}\n"
@@ -137,22 +157,32 @@ class PlotData:
 
 both =  Type.SLAVE | Type.MASTER
 all_modes = Mode.U | Mode.I | Mode.T
+
 def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) -> PlotData:
     decoder = msgspec.json.Decoder()
+    id=None
+    afeMasterParameters = None
+    afeSlaveParameters = None
     with open(file_path, 'r') as file:
         # counter = 0
-        timestamp_slave_u = np.array([])
-        u_sipm_slave = np.array([])
-        timestamp_master_u = np.array([])
-        u_sipm_master = np.array([])
-        timestamp_slave_i = np.array([])
-        i_sipm_slave = np.array([])
-        timestamp_master_i = np.array([])
-        i_sipm_master = np.array([])
-        timestamp_slave_t = np.array([])
-        t_sipm_slave = np.array([])
-        timestamp_master_t = np.array([])
-        t_sipm_master = np.array([])
+        timestamp_slave_u = []
+        rtc_timestamp_slave_u = []
+        u_sipm_slave = []
+        timestamp_master_u = []
+        rtc_timestamp_master_u = []
+        u_sipm_master = []
+        timestamp_slave_i = []
+        rtc_timestamp_slave_i =[]
+        i_sipm_slave = []
+        timestamp_master_i = []
+        rtc_timestamp_master_i = []
+        i_sipm_master = []
+        timestamp_slave_t = []
+        rtc_timestamp_slave_t = []
+        t_sipm_slave = []
+        timestamp_master_t = []
+        rtc_timestamp_master_t = []
+        t_sipm_master = []
 
         for line in file:
             try:
@@ -218,103 +248,196 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
                         if Type.SLAVE in sipm_type:
                             if Mode.U in mode:
                                 if 'U_SIPM_MEAS1' in average_data:
-                                    timestamp_slave_u = np.append(timestamp_slave_u, result.get("timestamp"))
-                                    u_sipm_slave = np.append(u_sipm_slave, average_data.get("U_SIPM_MEAS1"))
+                                    timestamp_slave_u.append(result.get("timestamp"))
+                                    rtc_timestamp_slave_u.append(result.get("rtc_timestamp"))
+                                    u_sipm_slave.append(average_data.get("U_SIPM_MEAS1"))
                             if Mode.I in mode:
                                 if 'I_SIPM_MEAS1' in average_data:
-                                    timestamp_slave_i = np.append(timestamp_slave_i, result.get("timestamp"))
-                                    i_sipm_slave = np.append(i_sipm_slave, average_data.get("I_SIPM_MEAS1"))
+                                    timestamp_slave_i.append(result.get("timestamp"))
+                                    rtc_timestamp_slave_i.append(result.get("rtc_timestamp"))
+                                    i_sipm_slave.append(average_data.get("I_SIPM_MEAS1"))
                             if Mode.T in mode:
                                 if 'TEMP_EXT' in average_data:
-                                    timestamp_slave_t = np.append(timestamp_slave_t, result.get("timestamp"))
-                                    t_sipm_slave = np.append(t_sipm_slave, average_data.get("TEMP_EXT"))
+                                    timestamp_slave_t.append(result.get("timestamp"))
+                                    rtc_timestamp_slave_t.append(result.get("rtc_timestamp"))
+                                    t_sipm_slave.append(average_data.get("TEMP_EXT"))
                         if Type.MASTER in sipm_type:
                             if Mode.U in mode:
                                 if 'U_SIPM_MEAS0' in average_data:
-                                    timestamp_master_u = np.append(timestamp_master_u, result.get("timestamp"))
-                                    u_sipm_master = np.append(u_sipm_master, average_data.get("U_SIPM_MEAS0"))
+                                    timestamp_master_u.append(result.get("timestamp"))
+                                    rtc_timestamp_master_u.append(result.get("rtc_timestamp"))
+                                    u_sipm_master.append(average_data.get("U_SIPM_MEAS0"))
                             if Mode.I in mode:
                                 if 'I_SIPM_MEAS0' in average_data:
-                                    timestamp_master_i = np.append(timestamp_master_i, result.get("timestamp"))
-                                    i_sipm_master = np.append(i_sipm_master, average_data.get("I_SIPM_MEAS0"))
+                                    timestamp_master_i.append(result.get("timestamp"))
+                                    rtc_timestamp_master_i.append(result.get("rtc_timestamp"))
+                                    i_sipm_master.append(average_data.get("I_SIPM_MEAS0"))
                             if Mode.T in mode:
                                 if 'TEMP_LOCAL' in average_data:
-                                    timestamp_master_t = np.append(timestamp_master_t, result.get("timestamp"))
-                                    t_sipm_master = np.append(t_sipm_master, average_data.get("TEMP_LOCAL"))
+                                    timestamp_master_t.append(result.get("timestamp"))
+                                    rtc_timestamp_master_t.append(result.get("rtc_timestamp"))
+                                    t_sipm_master.append(average_data.get("TEMP_LOCAL"))
     # print(measurement_parameters)
     return PlotData(u_timestamp_master=timestamp_master_u,
+                    rtc_u_timestamp_master=rtc_timestamp_master_u,
                     u_sipm_master=u_sipm_master,
                     i_timestamp_master=timestamp_master_i,
+                    rtc_i_timestamp_master=rtc_timestamp_master_i,
                     i_sipm_master=i_sipm_master,
                     t_timestamp_master=timestamp_master_t,
+                    rtc_t_timestamp_master=rtc_timestamp_master_t,
                     t_sipm_master=t_sipm_master,
                     u_timestamp_slave=timestamp_slave_u,
+                    rtc_u_timestamp_slave=rtc_timestamp_slave_u,
                     u_sipm_slave=u_sipm_slave,
                     i_timestamp_slave=timestamp_slave_i,
+                    rtc_i_timestamp_slave=rtc_timestamp_slave_i,
                     i_sipm_slave=i_sipm_slave,
                     t_timestamp_slave=timestamp_slave_t,
+                    rtc_t_timestamp_slave=rtc_timestamp_slave_t,
+                    t_sipm_slave=t_sipm_slave,
+                    measurement_parameters=MeasurementParameters(id, afeMasterParameters, afeSlaveParameters))
+
+def combine(data_list: List[PlotData]) -> PlotData:
+    id = data_list[0].measurement_parameters.id;
+    afeMasterParameters = data_list[0].measurement_parameters.afeMaster
+    afeSlaveParameters = data_list[0].measurement_parameters.afeSlave
+    u_timestamp_master = []
+    rtc_u_timestamp_master = []
+    u_sipm_master = []
+    i_timestamp_master = []
+    rtc_i_timestamp_master = []
+    i_sipm_master = []
+    t_timestamp_master = []
+    rtc_t_timestamp_master = []
+    t_sipm_master = []
+    u_timestamp_slave = []
+    rtc_u_timestamp_slave = []
+    u_sipm_slave = []
+    i_timestamp_slave = []
+    rtc_i_timestamp_slave = []
+    i_sipm_slave = []
+    t_timestamp_slave = []
+    rtc_t_timestamp_slave = []
+    t_sipm_slave = []
+
+    for data in data_list:
+        for elem in data.u_timestamp_master:
+            u_timestamp_master.append(elem)
+        for elem in data.rtc_u_timestamp_master:
+            rtc_u_timestamp_master.append(elem)
+        for elem in data.u_sipm_master:
+            u_sipm_master.append(elem)
+        for elem in data.i_timestamp_master:
+            i_timestamp_master.append(elem)
+        for elem in data.rtc_i_timestamp_master:
+            rtc_i_timestamp_master.append(elem)
+        for elem in data.i_sipm_master:
+            i_sipm_master.append(elem)
+        for elem in data.t_timestamp_master:
+            t_timestamp_master.append(elem)
+        for elem in data.rtc_t_timestamp_master:
+            rtc_t_timestamp_master.append(elem)
+        for elem in data.t_sipm_master:
+            t_sipm_master.append(elem)
+        for elem in data.u_timestamp_slave:
+            u_timestamp_slave.append(elem)
+        for elem in data.rtc_u_timestamp_slave:
+            rtc_u_timestamp_slave.append(elem)
+        for elem in data.u_sipm_slave:
+            u_sipm_slave.append(elem)
+        for elem in data.i_timestamp_slave:
+            i_timestamp_slave.append(elem)
+        for elem in data.rtc_i_timestamp_slave:
+            rtc_i_timestamp_slave.append(elem)
+        for elem in data.i_sipm_slave:
+            i_sipm_slave.append(elem)
+        for elem in data.t_timestamp_slave:
+            t_timestamp_slave.append(elem)
+        for elem in data.rtc_t_timestamp_slave:
+            rtc_t_timestamp_slave.append(elem)
+        for elem in data.t_sipm_slave:
+            t_sipm_slave.append(elem)
+
+    return PlotData(u_timestamp_master=u_timestamp_master,
+                    rtc_u_timestamp_master=rtc_u_timestamp_master,
+                    u_sipm_master=u_sipm_master,
+                    i_timestamp_master=i_timestamp_master,
+                    rtc_i_timestamp_master=rtc_i_timestamp_master,
+                    i_sipm_master=i_sipm_master,
+                    t_timestamp_master=t_timestamp_master,
+                    rtc_t_timestamp_master=rtc_t_timestamp_master,
+                    t_sipm_master=t_sipm_master,
+                    u_timestamp_slave=u_timestamp_slave,
+                    rtc_u_timestamp_slave=rtc_u_timestamp_slave,
+                    u_sipm_slave=u_sipm_slave,
+                    i_timestamp_slave=i_timestamp_slave,
+                    rtc_i_timestamp_slave=rtc_i_timestamp_slave,
+                    i_sipm_slave=i_sipm_slave,
+                    t_timestamp_slave=t_timestamp_slave,
+                    rtc_t_timestamp_slave=rtc_t_timestamp_slave,
                     t_sipm_slave=t_sipm_slave,
                     measurement_parameters=MeasurementParameters(id, afeMasterParameters, afeSlaveParameters))
 
 if __name__ == "__main__":
-    plot_data = read_file("log_6.json")
-    binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
-                                header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
-    # print(binder_data_df)
-    # print(binder_data_df.info(memory_usage='deep'))
-    start_time = pd.Timestamp("1900-01-01 00:00:00")
-    zero_time = pd.Timestamp("00:00:00")
-    # display(start_time)
-    # display(zero_time)
-    # time_stamp = binder_data_df['Length'][1]
-    # display(time_stamp)
-    # delta0 = binder_data_df['Length'][0] - start_time
-    # delta1 = binder_data_df['Length'][1] - start_time
-    # display(delta0)
-    # display(type(delta0))
-    # display(delta1)
-    # suma = delta0 + delta1
-    # display(suma)
-    # display(type(suma))
-    # display(binder_data_df['Length'])
-    counter = 0
-    time_series = [0]
-    result = 0
-    length = len(binder_data_df) - 1
-    while counter < length:
-        if counter == 0:
-            result = binder_data_df['Length'][counter] - start_time
-        else:
-            result += (binder_data_df['Length'][counter] - start_time)
-        time_series.append(result.total_seconds()/3600)
-        counter += 1
-    np_t_timestamp_master_h = plot_data.t_timestamp_master / 1000 / 3600
-    fig, ax_temperature = plt.subplots()
-    ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
-    ax_temperature.plot(np_t_timestamp_master_h, plot_data.t_sipm_master, label='SiPM Master Temperature', color='orange')
-    ax_temperature.set_xlabel('time [h]')
-    ax_temperature.set_ylabel('Temperature [°C]')
-    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
-    ax_temperature.set_xlim(left=-2, right=24)
-    ax_temperature.grid(True)
-    ax_voltage = ax_temperature.twinx()
-    # ax_temperature.legend(loc='lower center')
-    np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
-    ax_temperature.set_xlabel('time [h]')
-    ax_temperature.set_ylabel('Temperature [°C]')
-    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
-    ax_temperature.set_xlim(left=-2, right=24)
-    ax_temperature.grid(True)
-    ax_voltage = ax_temperature.twinx()
-    # ax_temperature.legend(loc='lower center')
-    np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
-    mask = plot_data.u_sipm_master > 48
-    np_u_timestamp_master_h = np_u_timestamp_master_h[mask]
-    plot_data.u_sipm_master = plot_data.u_sipm_master[mask]
-    ax_voltage.set_ylabel('Voltage [V]')
-    ax_voltage.plot(np_u_timestamp_master_h, plot_data.u_sipm_master, label='SiPM Voltage Master', color='blue')
-    fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
-    plt.show()
+    test_dir = Path(__file__)
+    print(test_dir.home())
+    dir_path_str = r"D:\PythonProjects\HUB_LOGS\logs_2025_07_01"
+    dir_path = Path(dir_path_str)
+    data_list = []
+    for entry in dir_path.iterdir():
+        # print(entry.name)
+        if entry.is_file():
+            data_list.append(read_file(entry))
+    data_combined = combine(data_list)
+    print(data_combined)
+    print("Data 8")
+    print(data_list[8])
+    print("Data 12")
+    print(data_list[12])
+    # plot_data = read_file("log_6.json")
+    # binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
+    #                             header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
+    # start_time = pd.Timestamp("1900-01-01 00:00:00")
+    # zero_time = pd.Timestamp("00:00:00")
+    # counter = 0
+    # time_series = [0]
+    # result = 0
+    # length = len(binder_data_df) - 1
+    # while counter < length:
+    #     if counter == 0:
+    #         result = binder_data_df['Length'][counter] - start_time
+    #     else:
+    #         result += (binder_data_df['Length'][counter] - start_time)
+    #     time_series.append(result.total_seconds()/3600)
+    #     counter += 1
+    # np_t_timestamp_master_h = plot_data.t_timestamp_master / 1000 / 3600
+    # fig, ax_temperature = plt.subplots()
+    # ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
+    # ax_temperature.plot(np_t_timestamp_master_h, plot_data.t_sipm_master, label='SiPM Master Temperature', color='orange')
+    # ax_temperature.set_xlabel('time [h]')
+    # ax_temperature.set_ylabel('Temperature [°C]')
+    # ax_temperature.set_title("Binder Temperature and SiPM Temperature")
+    # ax_temperature.set_xlim(left=-2, right=24)
+    # ax_temperature.grid(True)
+    # ax_voltage = ax_temperature.twinx()
+    # # ax_temperature.legend(loc='lower center')
+    # np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
+    # ax_temperature.set_xlabel('time [h]')
+    # ax_temperature.set_ylabel('Temperature [°C]')
+    # ax_temperature.set_title("Binder Temperature and SiPM Temperature")
+    # ax_temperature.set_xlim(left=-2, right=24)
+    # ax_temperature.grid(True)
+    # ax_voltage = ax_temperature.twinx()
+    # # ax_temperature.legend(loc='lower center')
+    # np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
+    # mask = plot_data.u_sipm_master > 48
+    # np_u_timestamp_master_h = np_u_timestamp_master_h[mask]
+    # plot_data.u_sipm_master = plot_data.u_sipm_master[mask]
+    # ax_voltage.set_ylabel('Voltage [V]')
+    # ax_voltage.plot(np_u_timestamp_master_h, plot_data.u_sipm_master, label='SiPM Master Voltage', color='blue')
+    # fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
+    # plt.show()
     # fig_master_u, ax_master_u = plt.subplots()
     # ax_master_u.plot(plot_data.u_timestamp_master, plot_data.u_sipm_master)
     # ax_master_u.set_ylim(55.0, 55.25)
