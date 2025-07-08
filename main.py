@@ -303,9 +303,7 @@ if __name__ == "__main__":
     ax_temperature.set_xlabel('time [h]')
     ax_temperature.set_ylabel('Temperature [°C]')
     ax_temperature.set_title("Binder Temperature and SiPM Temperature")
-    ax_temperature.set_xlim(left=-2, right=24)
     ax_temperature.grid(True)
-    ax_voltage = ax_temperature.twinx()
     # ax_temperature.legend(loc='lower center')
     np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
     mask = plot_data.u_sipm_master > 48
