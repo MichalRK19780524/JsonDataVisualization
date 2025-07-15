@@ -359,24 +359,24 @@ def combine(data_list: List[PlotData]) -> PlotData:
         for elem in data.t_sipm_slave:
             t_sipm_slave.append(elem)
 
-    return PlotData(u_timestamp_master=u_timestamp_master,
-                    rtc_u_timestamp_master=rtc_u_timestamp_master,
-                    u_sipm_master=u_sipm_master,
-                    i_timestamp_master=i_timestamp_master,
-                    rtc_i_timestamp_master=rtc_i_timestamp_master,
-                    i_sipm_master=i_sipm_master,
-                    t_timestamp_master=t_timestamp_master,
-                    rtc_t_timestamp_master=rtc_t_timestamp_master,
-                    t_sipm_master=t_sipm_master,
-                    u_timestamp_slave=u_timestamp_slave,
-                    rtc_u_timestamp_slave=rtc_u_timestamp_slave,
-                    u_sipm_slave=u_sipm_slave,
-                    i_timestamp_slave=i_timestamp_slave,
-                    rtc_i_timestamp_slave=rtc_i_timestamp_slave,
-                    i_sipm_slave=i_sipm_slave,
-                    t_timestamp_slave=t_timestamp_slave,
-                    rtc_t_timestamp_slave=rtc_t_timestamp_slave,
-                    t_sipm_slave=t_sipm_slave,
+    return PlotData(u_timestamp_master=np.array(u_timestamp_master),
+                    rtc_u_timestamp_master=np.array(rtc_u_timestamp_master),
+                    u_sipm_master=np.array(u_sipm_master),
+                    i_timestamp_master=np.array(i_timestamp_master),
+                    rtc_i_timestamp_master=np.array(rtc_i_timestamp_master),
+                    i_sipm_master=np.array(i_sipm_master),
+                    t_timestamp_master=np.array(t_timestamp_master),
+                    rtc_t_timestamp_master=np.array(rtc_t_timestamp_master),
+                    t_sipm_master=np.array(t_sipm_master),
+                    u_timestamp_slave=np.array(u_timestamp_slave),
+                    rtc_u_timestamp_slave=np.array(rtc_u_timestamp_slave),
+                    u_sipm_slave=np.array(u_sipm_slave),
+                    i_timestamp_slave=np.array(i_timestamp_slave),
+                    rtc_i_timestamp_slave=np.array(rtc_i_timestamp_slave),
+                    i_sipm_slave=np.array(i_sipm_slave),
+                    t_timestamp_slave=np.array(t_timestamp_slave),
+                    rtc_t_timestamp_slave=np.array(rtc_t_timestamp_slave),
+                    t_sipm_slave=np.array(t_sipm_slave),
                     measurement_parameters=MeasurementParameters(id, afeMasterParameters, afeSlaveParameters))
 
 if __name__ == "__main__":
@@ -390,11 +390,24 @@ if __name__ == "__main__":
         if entry.is_file():
             data_list.append(read_file(entry))
     data_combined = combine(data_list)
-    print(data_combined)
-    print("Data 8")
-    print(data_list[8])
-    print("Data 12")
-    print(data_list[12])
+    fig, ax_temperature = plt.subplots()
+    np_rtc_t_timestamp_master_h = (data_combined.rtc_t_timestamp_master - data_combined.rtc_t_timestamp_master[0]) / 3600
+    np_rtc_u_timestamp_master_h = (data_combined.rtc_u_timestamp_master - data_combined.rtc_u_timestamp_master[0]) / 3600
+    print(data_combined.rtc_t_timestamp_master[0])
+    print(np_rtc_t_timestamp_master_h)
+    ax_temperature.plot(np_rtc_t_timestamp_master_h, data_combined.t_sipm_master, label='SiPM Master Temperature', color='red')
+    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
+    ax_voltage = ax_temperature.twinx()
+    mask = data_combined.u_sipm_master > 48
+    np_rtc_u_timestamp_master_h = np_rtc_u_timestamp_master_h[mask]
+    data_combined.u_sipm_master = data_combined.u_sipm_master[mask]
+    ax_voltage.plot(np_rtc_u_timestamp_master_h, data_combined.u_sipm_master, label='SiPM Master Voltage', color='blue')
+    ax_temperature.grid(True)
+    plt.show()
+    # print("Data 8")
+    # print(data_list[8])
+    # print("Data 12")
+    # print(data_list[12])
     # plot_data = read_file("log_6.json")
     # binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
     #                             header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
