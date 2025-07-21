@@ -188,6 +188,7 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
             try:
                 result = decoder.decode(line)
             except msgspec.DecodeError:
+                result = None
                 pass
             if result is not None :
                 message = result.get('message')
