@@ -383,7 +383,7 @@ def combine(data_list: List[PlotData]) -> PlotData:
 if __name__ == "__main__":
     # test_dir = Path(__file__)
     # print(test_dir.home())
-    dir_path_str = r"D:\PythonProjects\HUB_LOGS\21_07_2025"
+    dir_path_str = r"D:\PythonProjects\HUB_LOGS\22_07_2025"
     dir_path = Path(dir_path_str)
     data_list = []
     for entry in dir_path.iterdir():
@@ -391,38 +391,65 @@ if __name__ == "__main__":
         if entry.is_file():
             data_list.append(read_file(entry))
     data_combined = combine(data_list)
-    fig, ax_temperature = plt.subplots()
-    np_rtc_t_timestamp_master_h = (data_combined.rtc_t_timestamp_master - data_combined.rtc_t_timestamp_master[0]) / 3600
-    np_rtc_u_timestamp_master_h = (data_combined.rtc_u_timestamp_master - data_combined.rtc_u_timestamp_master[0]) / 3600
+    fig_voltage, ax_voltage_temperature = plt.subplots()
+    np_rtc_t_period_master_h = (data_combined.rtc_t_timestamp_master - data_combined.rtc_t_timestamp_master[0]) / 3600
+    np_rtc_u_period_master_h = (data_combined.rtc_u_timestamp_master - data_combined.rtc_u_timestamp_master[0]) / 3600
 
-    np_rtc_t_timestamp_slave_h = (data_combined.rtc_t_timestamp_slave - data_combined.rtc_t_timestamp_slave[0]) / 3600
-    np_rtc_u_timestamp_slave_h = (data_combined.rtc_u_timestamp_slave - data_combined.rtc_u_timestamp_slave[0]) / 3600
+    np_rtc_t_period_slave_h = (data_combined.rtc_t_timestamp_slave - data_combined.rtc_t_timestamp_slave[0]) / 3600
+    np_rtc_u_period_slave_h = (data_combined.rtc_u_timestamp_slave - data_combined.rtc_u_timestamp_slave[0]) / 3600
 
     # print(data_combined.rtc_t_timestamp_master[0])
     # print(np_rtc_t_timestamp_master_h)
-    ax_temperature.plot(np_rtc_t_timestamp_master_h, data_combined.t_sipm_master, label='SiPM Master Temperature', color='red')
-    ax_temperature.plot(np_rtc_t_timestamp_slave_h, data_combined.t_sipm_slave, label='SiPM Slave Temperature', color='orange')
-    ax_temperature.set_title("SiPM Voltage and Temperature")
-    ax_temperature.set_xlabel('time [h]')
-    ax_temperature.set_ylabel('Temperature [C]')
-    ax_temperature.grid(True)
+    ax_voltage_temperature.plot(np_rtc_t_period_master_h, data_combined.t_sipm_master, label='SiPM Master Temperature', color='red')
+    ax_voltage_temperature.plot(np_rtc_t_period_slave_h, data_combined.t_sipm_slave, label='SiPM Slave Temperature', color='orange')
+    ax_voltage_temperature.set_title("SiPM Voltage and Temperature")
+    ax_voltage_temperature.set_xlabel('time [h]')
+    ax_voltage_temperature.set_ylabel('Temperature [C]')
+    ax_voltage_temperature.grid(True)
 
-    ax_voltage = ax_temperature.twinx()
+    ax_voltage = ax_voltage_temperature.twinx()
 
     u_sipm_master_mask = data_combined.u_sipm_master > 48
     u_sipm_slave_mask = data_combined.u_sipm_slave > 48
 
-    np_rtc_u_timestamp_master_h = np_rtc_u_timestamp_master_h[u_sipm_master_mask]
+    np_rtc_u_period_master_h = np_rtc_u_period_master_h[u_sipm_master_mask]
     data_combined.u_sipm_master = data_combined.u_sipm_master[u_sipm_master_mask]
 
-    np_rtc_u_timestamp_slave_h = np_rtc_u_timestamp_slave_h[u_sipm_slave_mask]
+    np_rtc_u_period_slave_h = np_rtc_u_period_slave_h[u_sipm_slave_mask]
     data_combined.u_sipm_slave = data_combined.u_sipm_slave[u_sipm_slave_mask]
 
-    ax_voltage.plot(np_rtc_u_timestamp_master_h, data_combined.u_sipm_master, label='SiPM Master Voltage', color='blue')
-    ax_voltage.plot(np_rtc_u_timestamp_slave_h, data_combined.u_sipm_slave, label='SiPM Slave Voltage', color='green')
+    ax_voltage.plot(np_rtc_u_period_master_h, data_combined.u_sipm_master, label='SiPM Master Voltage', color='blue')
+    ax_voltage.plot(np_rtc_u_period_slave_h, data_combined.u_sipm_slave, label='SiPM Slave Voltage', color='green')
 
     ax_voltage.set_ylabel('Voltage [V]')
-    fig.legend(bbox_to_anchor=(0.37, 0.2), loc='center right')
+    fig_voltage.legend(bbox_to_anchor=(0.37, 0.2), loc='center right')
+    plt.show()
+
+    fig_amperage, ax_amperage_temperature = plt.subplots()
+
+
+    np_rtc_i_period_master_h = (data_combined.rtc_i_timestamp_master - data_combined.rtc_i_timestamp_master[0]) / 3600
+    np_rtc_i_period_slave_h = (data_combined.rtc_i_timestamp_slave - data_combined.rtc_i_timestamp_slave[0]) / 3600
+
+    ax_amperage_temperature.plot(np_rtc_t_period_master_h, data_combined.t_sipm_master, label='SiPM Master Temperature', color='red')
+    ax_amperage_temperature.plot(np_rtc_t_period_slave_h, data_combined.t_sipm_slave, label='SiPM Slave Temperature', color='orange')
+    ax_amperage_temperature.set_title("SiPM Amperage and Temperature")
+    ax_amperage_temperature.set_xlabel('time [h]')
+    ax_amperage_temperature.set_ylabel('Temperature [C]')
+    ax_amperage_temperature.grid(True)
+
+    ax_amperage = ax_amperage_temperature.twinx()
+
+    # np_rtc_i_period_master_h = np_rtc_i_period_master_h[u_sipm_master_mask]
+    # data_combined.i_sipm_master = data_combined.i_sipm_master[u_sipm_master_mask]
+
+
+    ax_amperage.plot(np_rtc_i_period_master_h, data_combined.i_sipm_master, label='SiPM Master Amperage', color='blue')
+    ax_amperage.plot(np_rtc_i_period_slave_h, data_combined.i_sipm_slave, label='SiPM Slave Amperage', color='green')
+
+    ax_amperage.set_ylabel('Amperage [A]')
+    fig_amperage.legend(bbox_to_anchor=(0.37, 0.2), loc='center right')
+
     plt.show()
     # print("Data 8")
     # print(data_list[8])
