@@ -1,5 +1,3 @@
-# from os import times
-import os
 from typing import List
 
 import msgspec
@@ -7,7 +5,6 @@ from matplotlib import pyplot as plt
 from enum import Flag, auto
 import pandas as pd
 import numpy as np
-from IPython.display import display
 from pathlib import Path
 
 # from matplotlib.pyplot import plot_date
@@ -383,7 +380,7 @@ def combine(data_list: List[PlotData]) -> PlotData:
 if __name__ == "__main__":
     # test_dir = Path(__file__)
     # print(test_dir.home())
-    dir_path_str = r"D:\PythonProjects\HUB_LOGS\22_07_2025"
+    dir_path_str = r"D:\PythonProjects\HUB_LOGS\28_07_2025"
     dir_path = Path(dir_path_str)
     data_list = []
     for entry in dir_path.iterdir():
@@ -411,6 +408,30 @@ if __name__ == "__main__":
 
     u_sipm_master_mask = data_combined.u_sipm_master > 48
     u_sipm_slave_mask = data_combined.u_sipm_slave > 48
+
+    u_sipm_master_48 = data_combined.u_sipm_master[u_sipm_master_mask]
+
+    counter = 0
+    while(counter < len(u_sipm_master_48) - 1 and  u_sipm_master_48[counter] - u_sipm_master_48[counter + 1] < 1.1):
+        counter += 1
+    print("Timestamp gwaltownego spadku master: ", data_combined.rtc_u_timestamp_master[counter + 1])
+
+    counter = 0
+    while(counter < len(u_sipm_master_48) - 1 and  u_sipm_master_48[counter + 1] - u_sipm_master_48[counter] < 1.1):
+        counter += 1
+    print("Timestamp gwaltownego wzrostu master: ", data_combined.rtc_u_timestamp_master[counter + 2])
+
+    u_sipm_slave_48 = data_combined.u_sipm_slave[u_sipm_slave_mask]
+
+    counter = 0
+    while (counter < len(u_sipm_slave_48) - 1 and u_sipm_slave_48[counter] - u_sipm_slave_48[counter + 1] < 1.1):
+        counter += 1
+    print("Timestamp gwaltownego spadku slave: ", data_combined.rtc_u_timestamp_slave[counter + 1])
+
+    counter = 0
+    while (counter < len(u_sipm_slave_48) - 1 and u_sipm_slave_48[counter + 1] - u_sipm_slave_48[counter] < 1.1):
+        counter += 1
+    print("Timestamp gwaltownego wzrostu slave: ", data_combined.rtc_u_timestamp_slave[counter + 2])
 
     np_rtc_u_period_master_h = np_rtc_u_period_master_h[u_sipm_master_mask]
     data_combined.u_sipm_master = data_combined.u_sipm_master[u_sipm_master_mask]
