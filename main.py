@@ -411,27 +411,27 @@ if __name__ == "__main__":
 
     u_sipm_master_48 = data_combined.u_sipm_master[u_sipm_master_mask]
 
-    counter = 0
-    while(counter < len(u_sipm_master_48) - 1 and  u_sipm_master_48[counter] - u_sipm_master_48[counter + 1] < 1.1):
-        counter += 1
-    print("Timestamp gwaltownego spadku master: ", data_combined.rtc_u_timestamp_master[counter + 1])
-
-    counter = 0
-    while(counter < len(u_sipm_master_48) - 1 and  u_sipm_master_48[counter + 1] - u_sipm_master_48[counter] < 1.1):
-        counter += 1
-    print("Timestamp gwaltownego wzrostu master: ", data_combined.rtc_u_timestamp_master[counter + 2])
-
-    u_sipm_slave_48 = data_combined.u_sipm_slave[u_sipm_slave_mask]
-
-    counter = 0
-    while (counter < len(u_sipm_slave_48) - 1 and u_sipm_slave_48[counter] - u_sipm_slave_48[counter + 1] < 1.1):
-        counter += 1
-    print("Timestamp gwaltownego spadku slave: ", data_combined.rtc_u_timestamp_slave[counter + 1])
-
-    counter = 0
-    while (counter < len(u_sipm_slave_48) - 1 and u_sipm_slave_48[counter + 1] - u_sipm_slave_48[counter] < 1.1):
-        counter += 1
-    print("Timestamp gwaltownego wzrostu slave: ", data_combined.rtc_u_timestamp_slave[counter + 2])
+    # counter = 0
+    # while(counter < len(u_sipm_master_48) - 1 and  u_sipm_master_48[counter] - u_sipm_master_48[counter + 1] < 1.1):
+    #     counter += 1
+    # print("Timestamp gwaltownego spadku master: ", data_combined.rtc_u_timestamp_master[counter + 1])
+    #
+    # counter = 0
+    # while(counter < len(u_sipm_master_48) - 1 and  u_sipm_master_48[counter + 1] - u_sipm_master_48[counter] < 1.1):
+    #     counter += 1
+    # print("Timestamp gwaltownego wzrostu master: ", data_combined.rtc_u_timestamp_master[counter + 2])
+    #
+    # u_sipm_slave_48 = data_combined.u_sipm_slave[u_sipm_slave_mask]
+    #
+    # counter = 0
+    # while (counter < len(u_sipm_slave_48) - 1 and u_sipm_slave_48[counter] - u_sipm_slave_48[counter + 1] < 1.1):
+    #     counter += 1
+    # print("Timestamp gwaltownego spadku slave: ", data_combined.rtc_u_timestamp_slave[counter + 1])
+    #
+    # counter = 0
+    # while (counter < len(u_sipm_slave_48) - 1 and u_sipm_slave_48[counter + 1] - u_sipm_slave_48[counter] < 1.1):
+    #     counter += 1
+    # print("Timestamp gwaltownego wzrostu slave: ", data_combined.rtc_u_timestamp_slave[counter + 2])
 
     np_rtc_u_period_master_h = np_rtc_u_period_master_h[u_sipm_master_mask]
     data_combined.u_sipm_master = data_combined.u_sipm_master[u_sipm_master_mask]
@@ -477,48 +477,48 @@ if __name__ == "__main__":
     # print("Data 12")
     # print(data_list[12])
     # plot_data = read_file("log_6.json")
-    # binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
-    #                             header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
-    # start_time = pd.Timestamp("1900-01-01 00:00:00")
-    # zero_time = pd.Timestamp("00:00:00")
-    # counter = 0
-    # time_series = [0]
+    binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
+                                header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
+    start_time = pd.Timestamp("1900-01-01 00:00:00")
+    zero_time = pd.Timestamp("00:00:00")
+    counter = 0
+    time_series = [0]
     # result = 0
-    # length = len(binder_data_df) - 1
-    # while counter < length:
-    #     if counter == 0:
-    #         result = binder_data_df['Length'][counter] - start_time
-    #     else:
-    #         result += (binder_data_df['Length'][counter] - start_time)
-    #     time_series.append(result.total_seconds()/3600)
-    #     counter += 1
+    length = len(binder_data_df) - 1
+    while counter < length:
+        if counter == 0:
+            result = binder_data_df['Length'][counter] - start_time
+        else:
+            result += (binder_data_df['Length'][counter] - start_time)
+        time_series.append(result.total_seconds()/3600)
+        counter += 1
     # np_t_timestamp_master_h = plot_data.t_timestamp_master / 1000 / 3600
-    # fig, ax_temperature = plt.subplots()
-    # ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
+    fig, ax_temperature = plt.subplots()
+    ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
     # ax_temperature.plot(np_t_timestamp_master_h, plot_data.t_sipm_master, label='SiPM Master Temperature', color='orange')
-    # ax_temperature.set_xlabel('time [h]')
-    # ax_temperature.set_ylabel('Temperature [°C]')
-    # ax_temperature.set_title("Binder Temperature and SiPM Temperature")
+    ax_temperature.set_xlabel('time [h]')
+    ax_temperature.set_ylabel('Temperature [°C]')
+    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
     # ax_temperature.set_xlim(left=-2, right=24)
-    # ax_temperature.grid(True)
+    ax_temperature.grid(True)
     # ax_voltage = ax_temperature.twinx()
-    # # ax_temperature.legend(loc='lower center')
+    ax_temperature.legend(loc='lower center')
     # np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
-    # ax_temperature.set_xlabel('time [h]')
-    # ax_temperature.set_ylabel('Temperature [°C]')
-    # ax_temperature.set_title("Binder Temperature and SiPM Temperature")
+    ax_temperature.set_xlabel('time [h]')
+    ax_temperature.set_ylabel('Temperature [°C]')
+    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
     # ax_temperature.set_xlim(left=-2, right=24)
-    # ax_temperature.grid(True)
+    ax_temperature.grid(True)
     # ax_voltage = ax_temperature.twinx()
-    # # ax_temperature.legend(loc='lower center')
+    # ax_temperature.legend(loc='lower center')
     # np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
     # mask = plot_data.u_sipm_master > 48
     # np_u_timestamp_master_h = np_u_timestamp_master_h[mask]
     # plot_data.u_sipm_master = plot_data.u_sipm_master[mask]
     # ax_voltage.set_ylabel('Voltage [V]')
     # ax_voltage.plot(np_u_timestamp_master_h, plot_data.u_sipm_master, label='SiPM Master Voltage', color='blue')
-    # fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
-    # plt.show()
+    fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
+    plt.show()
     # fig_master_u, ax_master_u = plt.subplots()
     # ax_master_u.plot(plot_data.u_timestamp_master, plot_data.u_sipm_master)
     # ax_master_u.set_ylim(55.0, 55.25)
