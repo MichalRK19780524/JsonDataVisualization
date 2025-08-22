@@ -6,6 +6,7 @@ from enum import Flag, auto
 import pandas as pd
 import numpy as np
 from pathlib import Path
+import datetime
 
 # from matplotlib.pyplot import plot_date
 
@@ -381,6 +382,12 @@ if __name__ == "__main__":
     # test_dir = Path(__file__)
     # print(test_dir.home())
     dir_path_str = r"D:\PythonProjects\HUB_LOGS\28_07_2025"
+    start_date = datetime.datetime(2025, 7, 25, 0, 0, 0)
+    start_date_epoch = start_date.timestamp()
+
+    end_date = datetime.datetime(2025, 7, 26, 16, 10, 0)
+    end_date_epoch = end_date.timestamp()
+
     dir_path = Path(dir_path_str)
     data_list = []
     for entry in dir_path.iterdir():
@@ -388,12 +395,46 @@ if __name__ == "__main__":
         if entry.is_file():
             data_list.append(read_file(entry))
     data_combined = combine(data_list)
-    fig_voltage, ax_voltage_temperature = plt.subplots()
+
+    u_sipm_master_mask_48 = data_combined.u_sipm_master > 48
+    u_sipm_slave_mask_48 = data_combined.u_sipm_slave > 48
+
+    u_sipm_master_mask_date = (data_combined.rtc_u_timestamp_master > start_date_epoch) & (data_combined.rtc_u_timestamp_master < end_date_epoch)
+    u_sipm_slave_mask_date = (data_combined.rtc_u_timestamp_slave > start_date_epoch) & (data_combined.rtc_u_timestamp_slave < end_date_epoch)
+
+    t_sipm_master_mask_date = (data_combined.rtc_t_timestamp_master > start_date_epoch) & (data_combined.rtc_t_timestamp_master < end_date_epoch)
+    t_sipm_slave_mask_date = (data_combined.rtc_t_timestamp_slave > start_date_epoch) & (data_combined.rtc_t_timestamp_slave < end_date_epoch)
+
+    i_sipm_master_mask_date = (data_combined.rtc_i_timestamp_master > start_date_epoch) & (data_combined.rtc_i_timestamp_master < end_date_epoch)
+    i_sipm_slave_mask_date = (data_combined.rtc_i_timestamp_slave > start_date_epoch) & (data_combined.rtc_i_timestamp_slave < end_date_epoch)
+
     np_rtc_t_period_master_h = (data_combined.rtc_t_timestamp_master - data_combined.rtc_t_timestamp_master[0]) / 3600
     np_rtc_u_period_master_h = (data_combined.rtc_u_timestamp_master - data_combined.rtc_u_timestamp_master[0]) / 3600
+    np_rtc_i_period_master_h = (data_combined.rtc_i_timestamp_master - data_combined.rtc_i_timestamp_master[0]) / 3600
 
-    np_rtc_t_period_slave_h = (data_combined.rtc_t_timestamp_slave - data_combined.rtc_t_timestamp_slave[0]) / 3600
+    np_rtc_t_period_master_h = np_rtc_t_period_master_h[t_sipm_master_mask_date]
+    data_combined.t_sipm_master = data_combined.t_sipm_master[t_sipm_master_mask_date]
+
+    np_rtc_u_period_master_h = np_rtc_u_period_master_h[u_sipm_master_mask_48 & u_sipm_master_mask_date]
+    data_combined.u_sipm_master = data_combined.u_sipm_master[u_sipm_master_mask_48 & u_sipm_master_mask_date]
+
+    np_rtc_i_period_master_h = np_rtc_i_period_master_h[i_sipm_master_mask_date]
+    data_combined.i_sipm_master = data_combined.i_sipm_master[i_sipm_master_mask_date]
+
     np_rtc_u_period_slave_h = (data_combined.rtc_u_timestamp_slave - data_combined.rtc_u_timestamp_slave[0]) / 3600
+    np_rtc_t_period_slave_h = (data_combined.rtc_t_timestamp_slave - data_combined.rtc_t_timestamp_slave[0]) / 3600
+    np_rtc_i_period_slave_h = (data_combined.rtc_i_timestamp_slave - data_combined.rtc_i_timestamp_slave[0]) / 3600
+
+    np_rtc_t_period_slave_h = np_rtc_t_period_slave_h[t_sipm_slave_mask_date]
+    data_combined.t_sipm_slave = data_combined.t_sipm_slave[t_sipm_slave_mask_date]
+
+    np_rtc_u_period_slave_h = np_rtc_u_period_slave_h[u_sipm_slave_mask_48 & u_sipm_slave_mask_date]
+    data_combined.u_sipm_slave = data_combined.u_sipm_slave[u_sipm_slave_mask_48 & u_sipm_slave_mask_date]
+
+    np_rtc_i_period_slave_h = np_rtc_i_period_slave_h[i_sipm_slave_mask_date]
+    data_combined.i_sipm_slave = data_combined.i_sipm_slave[i_sipm_slave_mask_date]
+
+    fig_voltage, ax_voltage_temperature = plt.subplots()
 
     # print(data_combined.rtc_t_timestamp_master[0])
     # print(np_rtc_t_timestamp_master_h)
@@ -406,10 +447,7 @@ if __name__ == "__main__":
 
     ax_voltage = ax_voltage_temperature.twinx()
 
-    u_sipm_master_mask = data_combined.u_sipm_master > 48
-    u_sipm_slave_mask = data_combined.u_sipm_slave > 48
 
-    u_sipm_master_48 = data_combined.u_sipm_master[u_sipm_master_mask]
 
     # counter = 0
     # while(counter < len(u_sipm_master_48) - 1 and  u_sipm_master_48[counter] - u_sipm_master_48[counter + 1] < 1.1):
@@ -433,11 +471,7 @@ if __name__ == "__main__":
     #     counter += 1
     # print("Timestamp gwaltownego wzrostu slave: ", data_combined.rtc_u_timestamp_slave[counter + 2])
 
-    np_rtc_u_period_master_h = np_rtc_u_period_master_h[u_sipm_master_mask]
-    data_combined.u_sipm_master = data_combined.u_sipm_master[u_sipm_master_mask]
 
-    np_rtc_u_period_slave_h = np_rtc_u_period_slave_h[u_sipm_slave_mask]
-    data_combined.u_sipm_slave = data_combined.u_sipm_slave[u_sipm_slave_mask]
 
     ax_voltage.plot(np_rtc_u_period_master_h, data_combined.u_sipm_master, label='SiPM Master Voltage', color='blue')
     ax_voltage.plot(np_rtc_u_period_slave_h, data_combined.u_sipm_slave, label='SiPM Slave Voltage', color='green')
@@ -447,10 +481,6 @@ if __name__ == "__main__":
     plt.show()
 
     fig_amperage, ax_amperage_temperature = plt.subplots()
-
-
-    np_rtc_i_period_master_h = (data_combined.rtc_i_timestamp_master - data_combined.rtc_i_timestamp_master[0]) / 3600
-    np_rtc_i_period_slave_h = (data_combined.rtc_i_timestamp_slave - data_combined.rtc_i_timestamp_slave[0]) / 3600
 
     ax_amperage_temperature.plot(np_rtc_t_period_master_h, data_combined.t_sipm_master, label='SiPM Master Temperature', color='red')
     ax_amperage_temperature.plot(np_rtc_t_period_slave_h, data_combined.t_sipm_slave, label='SiPM Slave Temperature', color='orange')
