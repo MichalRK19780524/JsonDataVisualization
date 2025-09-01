@@ -82,12 +82,14 @@ class MeasurementParameters:
                 f"afeSlave={self.afeSlave}")
 
 class PlotData:
-    def __init__(self, u_timestamp_master, rtc_u_timestamp_master, u_sipm_master, i_timestamp_master, rtc_i_timestamp_master, i_sipm_master, t_timestamp_master, rtc_t_timestamp_master,
-                 t_sipm_master, u_timestamp_slave, rtc_u_timestamp_slave, u_sipm_slave, i_timestamp_slave, rtc_i_timestamp_slave, i_sipm_slave, t_timestamp_slave, rtc_t_timestamp_slave, t_sipm_slave,
+    def __init__(self, u_timestamp_master, rtc_u_timestamp_master, u_sipm_master, rtc_u_set_timestamp_master, u_set_sipm_master, i_timestamp_master, rtc_i_timestamp_master, i_sipm_master, t_timestamp_master, rtc_t_timestamp_master,
+                 t_sipm_master, u_timestamp_slave, rtc_u_timestamp_slave, u_sipm_slave, rtc_u_set_timestamp_slave, u_set_sipm_slave, i_timestamp_slave, rtc_i_timestamp_slave, i_sipm_slave, t_timestamp_slave, rtc_t_timestamp_slave, t_sipm_slave,
                  measurement_parameters: MeasurementParameters):
         self.u_timestamp_master = u_timestamp_master
         self.rtc_u_timestamp_master = rtc_u_timestamp_master
         self.u_sipm_master = u_sipm_master
+        self.rtc_u_set_timestamp_master = rtc_u_set_timestamp_master
+        self.u_set_sipm_master = u_set_sipm_master
         self.i_timestamp_master = i_timestamp_master
         self.rtc_i_timestamp_master = rtc_i_timestamp_master
         self.i_sipm_master = i_sipm_master
@@ -97,6 +99,8 @@ class PlotData:
         self.u_timestamp_slave = u_timestamp_slave
         self.rtc_u_timestamp_slave = rtc_u_timestamp_slave
         self.u_sipm_slave = u_sipm_slave
+        self.rtc_u_set_timestamp_slave = rtc_u_set_timestamp_slave
+        self.u_set_sipm_slave = u_set_sipm_slave
         self.i_timestamp_slave = i_timestamp_slave
         self.rtc_i_timestamp_slave = rtc_i_timestamp_slave
         self.i_sipm_slave = i_sipm_slave
@@ -161,14 +165,18 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
     id=None
     afeMasterParameters = None
     afeSlaveParameters = None
-    with open(file_path, 'r') as file:
+    with (open(file_path, 'r') as file):
         # counter = 0
         timestamp_slave_u = []
         rtc_timestamp_slave_u = []
         u_sipm_slave = []
+        rtc_timestamp_slave_set_u = []
+        u_set_sipm_slave = []
         timestamp_master_u = []
         rtc_timestamp_master_u = []
         u_sipm_master = []
+        rtc_timestamp_master_set_u = []
+        u_set_sipm_master = []
         timestamp_slave_i = []
         rtc_timestamp_slave_i =[]
         i_sipm_slave = []
@@ -242,44 +250,60 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
                                                                                 i_measured_b, i_measured_a, offset,
                                                                                 t_br, avg_number, v_br)
                     retval = message.get('retval')
-                    if retval is not None and isinstance(retval, dict) and 'average_data' in retval:
-                        average_data = retval['average_data']
-                        if Type.SLAVE in sipm_type:
-                            if Mode.U in mode:
-                                if 'U_SIPM_MEAS1' in average_data:
-                                    timestamp_slave_u.append(result.get("timestamp"))
-                                    rtc_timestamp_slave_u.append(result.get("rtc_timestamp"))
-                                    u_sipm_slave.append(average_data.get("U_SIPM_MEAS1"))
-                            if Mode.I in mode:
-                                if 'I_SIPM_MEAS1' in average_data:
-                                    timestamp_slave_i.append(result.get("timestamp"))
-                                    rtc_timestamp_slave_i.append(result.get("rtc_timestamp"))
-                                    i_sipm_slave.append(average_data.get("I_SIPM_MEAS1"))
-                            if Mode.T in mode:
-                                if 'TEMP_EXT' in average_data:
-                                    timestamp_slave_t.append(result.get("timestamp"))
-                                    rtc_timestamp_slave_t.append(result.get("rtc_timestamp"))
-                                    t_sipm_slave.append(average_data.get("TEMP_EXT"))
-                        if Type.MASTER in sipm_type:
-                            if Mode.U in mode:
-                                if 'U_SIPM_MEAS0' in average_data:
-                                    timestamp_master_u.append(result.get("timestamp"))
-                                    rtc_timestamp_master_u.append(result.get("rtc_timestamp"))
-                                    u_sipm_master.append(average_data.get("U_SIPM_MEAS0"))
-                            if Mode.I in mode:
-                                if 'I_SIPM_MEAS0' in average_data:
-                                    timestamp_master_i.append(result.get("timestamp"))
-                                    rtc_timestamp_master_i.append(result.get("rtc_timestamp"))
-                                    i_sipm_master.append(average_data.get("I_SIPM_MEAS0"))
-                            if Mode.T in mode:
-                                if 'TEMP_LOCAL' in average_data:
-                                    timestamp_master_t.append(result.get("timestamp"))
-                                    rtc_timestamp_master_t.append(result.get("rtc_timestamp"))
-                                    t_sipm_master.append(average_data.get("TEMP_LOCAL"))
+                    if retval is not None and isinstance(retval, dict):
+                        if 'average_data' in retval:
+                            average_data = retval['average_data']
+                            if Type.SLAVE in sipm_type:
+                                if Mode.U in mode:
+                                    if 'U_SIPM_MEAS1' in average_data:
+                                        timestamp_slave_u.append(result.get("timestamp"))
+                                        rtc_timestamp_slave_u.append(result.get("rtc_timestamp"))
+                                        u_sipm_slave.append(average_data.get("U_SIPM_MEAS1"))
+                                if Mode.I in mode:
+                                    if 'I_SIPM_MEAS1' in average_data:
+                                        timestamp_slave_i.append(result.get("timestamp"))
+                                        rtc_timestamp_slave_i.append(result.get("rtc_timestamp"))
+                                        i_sipm_slave.append(average_data.get("I_SIPM_MEAS1"))
+                                if Mode.T in mode:
+                                    if 'TEMP_EXT' in average_data:
+                                        timestamp_slave_t.append(result.get("timestamp"))
+                                        rtc_timestamp_slave_t.append(result.get("rtc_timestamp"))
+                                        t_sipm_slave.append(average_data.get("TEMP_EXT"))
+                            if Type.MASTER in sipm_type:
+                                if Mode.U in mode:
+                                    if 'U_SIPM_MEAS0' in average_data:
+                                        timestamp_master_u.append(result.get("timestamp"))
+                                        rtc_timestamp_master_u.append(result.get("rtc_timestamp"))
+                                        u_sipm_master.append(average_data.get("U_SIPM_MEAS0"))
+                                if Mode.I in mode:
+                                    if 'I_SIPM_MEAS0' in average_data:
+                                        timestamp_master_i.append(result.get("timestamp"))
+                                        rtc_timestamp_master_i.append(result.get("rtc_timestamp"))
+                                        i_sipm_master.append(average_data.get("I_SIPM_MEAS0"))
+                                if Mode.T in mode:
+                                    if 'TEMP_LOCAL' in average_data:
+                                        timestamp_master_t.append(result.get("timestamp"))
+                                        rtc_timestamp_master_t.append(result.get("rtc_timestamp"))
+                                        t_sipm_master.append(average_data.get("TEMP_LOCAL"))
+
+                        if 'channel' in retval and retval['channel'] is not None :
+                                if retval['channel'] == 'master':
+                                    if 'voltage_target' in retval and retval['voltage_target'] is not None:
+                                        u_set_sipm_master.append(retval['voltage_target']);
+                                        if "rtc_timestamp" in message and message["rtc_timestamp"] is not None:
+                                            rtc_timestamp_master_set_u.append(message.get("rtc_timestamp"))
+                                if retval['channel'] == 'slave':
+                                    if 'voltage_target' in retval and retval['voltage_target'] is not None:
+                                        u_set_sipm_slave.append(retval['voltage_target']);
+                                        if "rtc_timestamp" in message and message["rtc_timestamp"] is not None:
+                                            rtc_timestamp_slave_set_u.append(message.get("rtc_timestamp"))
+
     # print(measurement_parameters)
     return PlotData(u_timestamp_master=timestamp_master_u,
                     rtc_u_timestamp_master=rtc_timestamp_master_u,
                     u_sipm_master=u_sipm_master,
+                    rtc_u_set_timestamp_master=rtc_timestamp_master_set_u,
+                    u_set_sipm_master=u_set_sipm_master,
                     i_timestamp_master=timestamp_master_i,
                     rtc_i_timestamp_master=rtc_timestamp_master_i,
                     i_sipm_master=i_sipm_master,
@@ -289,6 +313,8 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
                     u_timestamp_slave=timestamp_slave_u,
                     rtc_u_timestamp_slave=rtc_timestamp_slave_u,
                     u_sipm_slave=u_sipm_slave,
+                    rtc_u_set_timestamp_slave=rtc_timestamp_slave_set_u,
+                    u_set_sipm_slave=u_set_sipm_slave,
                     i_timestamp_slave=timestamp_slave_i,
                     rtc_i_timestamp_slave=rtc_timestamp_slave_i,
                     i_sipm_slave=i_sipm_slave,
@@ -304,6 +330,8 @@ def combine(data_list: List[PlotData]) -> PlotData:
     u_timestamp_master = []
     rtc_u_timestamp_master = []
     u_sipm_master = []
+    rtc_u_set_sipm_master = []
+    u_set_sipm_master = []
     i_timestamp_master = []
     rtc_i_timestamp_master = []
     i_sipm_master = []
@@ -313,6 +341,8 @@ def combine(data_list: List[PlotData]) -> PlotData:
     u_timestamp_slave = []
     rtc_u_timestamp_slave = []
     u_sipm_slave = []
+    rtc_u_set_sipm_slave = []
+    u_set_sipm_slave = []
     i_timestamp_slave = []
     rtc_i_timestamp_slave = []
     i_sipm_slave = []
@@ -327,6 +357,10 @@ def combine(data_list: List[PlotData]) -> PlotData:
             rtc_u_timestamp_master.append(elem)
         for elem in data.u_sipm_master:
             u_sipm_master.append(elem)
+        for elem in data.rtc_u_set_timestamp_master:
+            rtc_u_set_sipm_master.append(elem)
+        for elem in data.u_set_sipm_master:
+            u_set_sipm_master.append(elem)
         for elem in data.i_timestamp_master:
             i_timestamp_master.append(elem)
         for elem in data.rtc_i_timestamp_master:
@@ -345,6 +379,10 @@ def combine(data_list: List[PlotData]) -> PlotData:
             rtc_u_timestamp_slave.append(elem)
         for elem in data.u_sipm_slave:
             u_sipm_slave.append(elem)
+        for elem in data.rtc_u_set_timestamp_slave:
+            rtc_u_set_sipm_slave.append(elem)
+        for elem in data.u_set_sipm_slave:
+            u_set_sipm_slave.append(elem)
         for elem in data.i_timestamp_slave:
             i_timestamp_slave.append(elem)
         for elem in data.rtc_i_timestamp_slave:
@@ -361,6 +399,8 @@ def combine(data_list: List[PlotData]) -> PlotData:
     return PlotData(u_timestamp_master=np.array(u_timestamp_master),
                     rtc_u_timestamp_master=np.array(rtc_u_timestamp_master),
                     u_sipm_master=np.array(u_sipm_master),
+                    rtc_u_set_timestamp_master=np.array(rtc_u_set_sipm_master),
+                    u_set_sipm_master=np.array(u_set_sipm_master),
                     i_timestamp_master=np.array(i_timestamp_master),
                     rtc_i_timestamp_master=np.array(rtc_i_timestamp_master),
                     i_sipm_master=np.array(i_sipm_master),
@@ -370,6 +410,8 @@ def combine(data_list: List[PlotData]) -> PlotData:
                     u_timestamp_slave=np.array(u_timestamp_slave),
                     rtc_u_timestamp_slave=np.array(rtc_u_timestamp_slave),
                     u_sipm_slave=np.array(u_sipm_slave),
+                    rtc_u_set_timestamp_slave = np.array(rtc_u_set_sipm_slave),
+                    u_set_sipm_slave = np.array(u_set_sipm_slave),
                     i_timestamp_slave=np.array(i_timestamp_slave),
                     rtc_i_timestamp_slave=np.array(rtc_i_timestamp_slave),
                     i_sipm_slave=np.array(i_sipm_slave),
@@ -381,11 +423,12 @@ def combine(data_list: List[PlotData]) -> PlotData:
 if __name__ == "__main__":
     # test_dir = Path(__file__)
     # print(test_dir.home())
-    dir_path_str = r"D:\PythonProjects\HUB_LOGS\28_07_2025"
-    start_date = datetime.datetime(2025, 7, 25, 0, 0, 0)
+    # dir_path_str = r"D:\PythonProjects\HUB_LOGS\01_08_2025"
+    dir_path_str = r"D:\PythonProjects\HUB_LOGS\29_08_2025"
+    start_date = datetime.datetime(2025, 8, 28, 12, 50, 0)
     start_date_epoch = start_date.timestamp()
 
-    end_date = datetime.datetime(2025, 7, 26, 16, 10, 0)
+    end_date = datetime.datetime(2025, 8, 29, 11, 15, 0)
     end_date_epoch = end_date.timestamp()
 
     dir_path = Path(dir_path_str)
@@ -408,8 +451,12 @@ if __name__ == "__main__":
     i_sipm_master_mask_date = (data_combined.rtc_i_timestamp_master > start_date_epoch) & (data_combined.rtc_i_timestamp_master < end_date_epoch)
     i_sipm_slave_mask_date = (data_combined.rtc_i_timestamp_slave > start_date_epoch) & (data_combined.rtc_i_timestamp_slave < end_date_epoch)
 
+    u_set_master_mask_date = (data_combined.rtc_u_set_timestamp_master > start_date_epoch) & (data_combined.rtc_u_set_timestamp_master < end_date_epoch)
+    u_set_slave_mask_date = (data_combined.rtc_u_set_timestamp_slave > start_date_epoch) & (data_combined.rtc_u_set_timestamp_slave < end_date_epoch)
+
     np_rtc_t_period_master_h = (data_combined.rtc_t_timestamp_master - data_combined.rtc_t_timestamp_master[0]) / 3600
     np_rtc_u_period_master_h = (data_combined.rtc_u_timestamp_master - data_combined.rtc_u_timestamp_master[0]) / 3600
+    np_rtc_u_set_period_master_h = (data_combined.rtc_u_set_timestamp_master - data_combined.rtc_u_set_timestamp_master[0]) / 3600
     np_rtc_i_period_master_h = (data_combined.rtc_i_timestamp_master - data_combined.rtc_i_timestamp_master[0]) / 3600
 
     np_rtc_t_period_master_h = np_rtc_t_period_master_h[t_sipm_master_mask_date]
@@ -418,11 +465,15 @@ if __name__ == "__main__":
     np_rtc_u_period_master_h = np_rtc_u_period_master_h[u_sipm_master_mask_48 & u_sipm_master_mask_date]
     data_combined.u_sipm_master = data_combined.u_sipm_master[u_sipm_master_mask_48 & u_sipm_master_mask_date]
 
+    np_rtc_u_set_period_master_h = np_rtc_u_set_period_master_h[u_set_master_mask_date]
+    data_combined.u_set_sipm_master = data_combined.u_set_sipm_master[u_set_master_mask_date]
+
     np_rtc_i_period_master_h = np_rtc_i_period_master_h[i_sipm_master_mask_date]
     data_combined.i_sipm_master = data_combined.i_sipm_master[i_sipm_master_mask_date]
 
     np_rtc_u_period_slave_h = (data_combined.rtc_u_timestamp_slave - data_combined.rtc_u_timestamp_slave[0]) / 3600
     np_rtc_t_period_slave_h = (data_combined.rtc_t_timestamp_slave - data_combined.rtc_t_timestamp_slave[0]) / 3600
+    np_rtc_u_set_period_slave_h = (data_combined.rtc_u_set_timestamp_slave - data_combined.rtc_u_set_timestamp_slave[0]) / 3600
     np_rtc_i_period_slave_h = (data_combined.rtc_i_timestamp_slave - data_combined.rtc_i_timestamp_slave[0]) / 3600
 
     np_rtc_t_period_slave_h = np_rtc_t_period_slave_h[t_sipm_slave_mask_date]
@@ -430,6 +481,9 @@ if __name__ == "__main__":
 
     np_rtc_u_period_slave_h = np_rtc_u_period_slave_h[u_sipm_slave_mask_48 & u_sipm_slave_mask_date]
     data_combined.u_sipm_slave = data_combined.u_sipm_slave[u_sipm_slave_mask_48 & u_sipm_slave_mask_date]
+
+    np_rtc_u_set_period_slave_h = np_rtc_u_set_period_slave_h[u_set_slave_mask_date]
+    data_combined.u_set_sipm_slave = data_combined.u_set_sipm_slave[u_set_slave_mask_date]
 
     np_rtc_i_period_slave_h = np_rtc_i_period_slave_h[i_sipm_slave_mask_date]
     data_combined.i_sipm_slave = data_combined.i_sipm_slave[i_sipm_slave_mask_date]
@@ -472,9 +526,15 @@ if __name__ == "__main__":
     # print("Timestamp gwaltownego wzrostu slave: ", data_combined.rtc_u_timestamp_slave[counter + 2])
 
 
-
     ax_voltage.plot(np_rtc_u_period_master_h, data_combined.u_sipm_master, label='SiPM Master Voltage', color='blue')
+    print("period set master voltage: ", np_rtc_u_set_period_master_h)
+    print("value set master voltage: ", data_combined.u_set_sipm_master)
+    ax_voltage.scatter(np_rtc_u_set_period_master_h, data_combined.u_set_sipm_master, s=200, color='cyan', label='SiPM Master Set Voltage', marker='*')
     ax_voltage.plot(np_rtc_u_period_slave_h, data_combined.u_sipm_slave, label='SiPM Slave Voltage', color='green')
+    print("period set slave voltage: ", np_rtc_u_set_period_slave_h)
+    print("value set slave voltage: ", data_combined.u_set_sipm_slave)
+    ax_voltage.scatter(np_rtc_u_set_period_slave_h, data_combined.u_set_sipm_slave, s=200, color='lime', label='SiPM Slave Set Voltage', marker='*')
+    ax_voltage.set_ylim(53.25, 54.75)
 
     ax_voltage.set_ylabel('Voltage [V]')
     fig_voltage.legend(bbox_to_anchor=(0.37, 0.2), loc='center right')
