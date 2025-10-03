@@ -203,9 +203,7 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
                     if info == 'default_procedure':
                         msg = message.get('msg')
                         if msg is not None:
-                            # measurement_parameters.id = msg.get("ID")
                             id = msg.get("ID")
-                            # print("msg is not None ", measurment_parameters.id)
                             afe_master = msg.get("M")
                             if afe_master is not None and isinstance(afe_master, dict):
                                 v_opt = afe_master.get("V_opt [V]")
@@ -298,7 +296,6 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
                                         if "rtc_timestamp" in message and message["rtc_timestamp"] is not None:
                                             rtc_timestamp_slave_set_u.append(message.get("rtc_timestamp"))
 
-    # print(measurement_parameters)
     return PlotData(u_timestamp_master=timestamp_master_u,
                     rtc_u_timestamp_master=rtc_timestamp_master_u,
                     u_sipm_master=u_sipm_master,
@@ -421,20 +418,18 @@ def combine(data_list: List[PlotData]) -> PlotData:
                     measurement_parameters=MeasurementParameters(id, afeMasterParameters, afeSlaveParameters))
 
 if __name__ == "__main__":
-    # test_dir = Path(__file__)
-    # print(test_dir.home())
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\01_08_2025"
-    dir_path_str = r"D:\PythonProjects\HUB_LOGS\29_08_2025"
-    start_date = datetime.datetime(2025, 8, 28, 12, 50, 0)
+    dir_path_str = r"D:\PythonProjects\HUB_LOGS\29_09_2025_cut_22_09"
+    # dir_path_str = r"D:\PythonProjects\HUB_LOGS\18_08_2025"
+    start_date = datetime.datetime(2025, 9, 22, 11, 0, 0)
     start_date_epoch = start_date.timestamp()
 
-    end_date = datetime.datetime(2025, 8, 29, 11, 15, 0)
+    end_date = datetime.datetime(2025, 9, 25, 11, 5, 0)
     end_date_epoch = end_date.timestamp()
 
     dir_path = Path(dir_path_str)
     data_list = []
     for entry in dir_path.iterdir():
-        # print(entry.name)
         if entry.is_file():
             data_list.append(read_file(entry))
     data_combined = combine(data_list)
@@ -463,7 +458,7 @@ if __name__ == "__main__":
     np_rtc_t_period_master_h = (data_combined.rtc_t_timestamp_master - data_combined.rtc_t_timestamp_master[0]) / 3600
     np_rtc_u_period_master_h = (data_combined.rtc_u_timestamp_master - data_combined.rtc_u_timestamp_master[0]) / 3600
     if data_combined.rtc_u_set_timestamp_master.size > 0:
-        np_rtc_u_set_period_master_h = (data_combined.rtc_u_set_timestamp_master - data_combined.rtc_u_set_timestamp_master[0]) / 3600
+        np_rtc_u_set_period_master_h = (data_combined.rtc_u_set_timestamp_master - data_combined.rtc_u_timestamp_master[0]) / 3600
     else:
         np_rtc_u_set_period_master_h = np.array([0])
 
@@ -488,7 +483,7 @@ if __name__ == "__main__":
     np_rtc_u_period_slave_h = (data_combined.rtc_u_timestamp_slave - data_combined.rtc_u_timestamp_slave[0]) / 3600
     np_rtc_t_period_slave_h = (data_combined.rtc_t_timestamp_slave - data_combined.rtc_t_timestamp_slave[0]) / 3600
     if data_combined.rtc_u_set_timestamp_slave.size > 0:
-        np_rtc_u_set_period_slave_h = (data_combined.rtc_u_set_timestamp_slave - data_combined.rtc_u_set_timestamp_slave[0]) / 3600
+        np_rtc_u_set_period_slave_h = (data_combined.rtc_u_set_timestamp_slave - data_combined.rtc_u_timestamp_slave[0]) / 3600
     else:
         np_rtc_u_set_period_slave_h = np.array([0])
 
@@ -518,12 +513,8 @@ if __name__ == "__main__":
 
 
     ax_voltage.plot(np_rtc_u_period_master_h, data_combined.u_sipm_master, label='SiPM Master Voltage', color='blue')
-    print("period set master voltage: ", np_rtc_u_set_period_master_h)
-    print("value set master voltage: ", data_combined.u_set_sipm_master)
     ax_voltage.scatter(np_rtc_u_set_period_master_h, data_combined.u_set_sipm_master, s=200, color='cyan', label='SiPM Master Set Voltage', marker='*')
     ax_voltage.plot(np_rtc_u_period_slave_h, data_combined.u_sipm_slave, label='SiPM Slave Voltage', color='green')
-    print("period set slave voltage: ", np_rtc_u_set_period_slave_h)
-    print("value set slave voltage: ", data_combined.u_set_sipm_slave)
     ax_voltage.scatter(np_rtc_u_set_period_slave_h, data_combined.u_set_sipm_slave, s=200, color='lime', label='SiPM Slave Set Voltage', marker='*')
     ax_voltage.set_ylim(53.25, 54.75)
 
