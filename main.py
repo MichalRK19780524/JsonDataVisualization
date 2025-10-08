@@ -540,6 +540,73 @@ if __name__ == "__main__":
     fig_amperage.legend(bbox_to_anchor=(0.37, 0.2), loc='center right')
 
     plt.show()
+    width = 20
+    dtype = f'U{width}'
+    max_elem = max([np_rtc_t_period_master_h.size,
+                    data_combined.t_sipm_master.size,
+                    np_rtc_u_period_master_h.size,
+                    data_combined.u_sipm_master.size,
+                    np_rtc_u_set_period_master_h.size,
+                    data_combined.u_set_sipm_master.size,
+                    np_rtc_t_period_slave_h.size,
+                    data_combined.t_sipm_slave.size,
+                    np_rtc_u_period_slave_h.size,
+                    data_combined.u_sipm_slave.size,
+                    np_rtc_u_set_period_slave_h.size,
+                    data_combined.u_set_sipm_slave.size])
+
+    np_rtc_t_period_master_h_string = np_rtc_t_period_master_h.astype(dtype)
+    np_rtc_t_period_master_h_string.resize(max_elem)
+
+    t_sipm_master_string = data_combined.t_sipm_master.astype(dtype)
+    t_sipm_master_string.resize(max_elem)
+
+    np_rtc_u_period_master_h_string = np_rtc_u_period_master_h.astype(dtype)
+    np_rtc_u_period_master_h_string.resize(max_elem)
+
+    u_sipm_master_string = data_combined.u_sipm_master.astype(dtype)
+    u_sipm_master_string.resize(max_elem)
+
+    np_rtc_u_set_period_master_h_string = np_rtc_u_set_period_master_h.astype(dtype)
+    np_rtc_u_set_period_master_h_string.resize(max_elem)
+
+    u_set_sipm_master_string = data_combined.u_set_sipm_master.astype(dtype)
+    u_set_sipm_master_string.resize(max_elem)
+
+    np_rtc_t_period_slave_h_string = np_rtc_t_period_slave_h.astype(dtype)
+    np_rtc_t_period_slave_h_string.resize(max_elem)
+
+    t_sipm_slave_string = data_combined.t_sipm_slave.astype(dtype)
+    t_sipm_slave_string.resize(max_elem)
+
+    np_rtc_u_period_slave_h_string  = np_rtc_u_period_slave_h.astype(dtype)
+    np_rtc_u_period_slave_h_string.resize(max_elem)
+
+    u_sipm_slave_string = data_combined.u_sipm_slave.astype(dtype)
+    u_sipm_slave_string.resize(max_elem)
+
+    np_rtc_u_set_period_slave_h_string = np_rtc_u_set_period_slave_h.astype(dtype)
+    np_rtc_u_set_period_slave_h_string.resize(max_elem)
+
+    u_set_sipm_slave_string = data_combined.u_set_sipm_slave.astype(dtype)
+    u_set_sipm_slave_string.resize(max_elem)
+
+    dict_to_csv = {'SiPM Master Temperature period [h]': np_rtc_t_period_master_h_string,
+     'SiPM Master Temperature [C]': t_sipm_master_string,
+     'SiPM Master Voltage period [h]': np_rtc_u_period_master_h_string,
+     'SiPM Master Voltage [V]': u_sipm_master_string,
+     'SiPM Master Set Voltage period [h]': np_rtc_u_set_period_master_h_string,
+     'SiPM Master Set Voltage [V]': u_set_sipm_master_string,
+     'SiPM Slave Temperature period [h]': np_rtc_t_period_slave_h_string,
+     'SiPM Slave Temperature [C]': t_sipm_slave_string,
+     'SiPM Slave Voltage period [h]': np_rtc_u_period_slave_h_string,
+     'SiPM Slave Voltage [V]': u_sipm_slave_string,
+     'SiPM Slave Set Voltage period [h]': np_rtc_u_set_period_slave_h_string,
+     'SiPM Slave Set Voltage [V]': u_set_sipm_slave_string
+     }
+
+    data_frame_to_csv = pd.DataFrame(dict_to_csv)
+    data_frame_to_csv.to_csv("temperature_voltage.csv")
 
     binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
                                 header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
