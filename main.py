@@ -419,12 +419,12 @@ def combine(data_list: List[PlotData]) -> PlotData:
 
 if __name__ == "__main__":
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\01_08_2025"
-    dir_path_str = r"D:\PythonProjects\HUB_LOGS\29_09_2025_cut_22_09"
+    dir_path_str = r"D:\PythonProjects\HUB_LOGS\20_10_2025_cut_16_10"
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\18_08_2025"
-    start_date = datetime.datetime(2025, 9, 22, 11, 0, 0)
+    start_date = datetime.datetime(2025, 10, 16, 13, 21, 0)
     start_date_epoch = start_date.timestamp()
 
-    end_date = datetime.datetime(2025, 9, 25, 11, 5, 0)
+    end_date = datetime.datetime(2025, 10, 19, 13, 22, 0)
     end_date_epoch = end_date.timestamp()
 
     dir_path = Path(dir_path_str)
@@ -606,7 +606,7 @@ if __name__ == "__main__":
      }
 
     data_frame_to_csv = pd.DataFrame(dict_to_csv)
-    data_frame_to_csv.to_csv("temperature_voltage.csv")
+    data_frame_to_csv.to_csv("temperature_voltage_16_10_2025.csv")
 
     binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
                                 header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
