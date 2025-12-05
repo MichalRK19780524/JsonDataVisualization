@@ -419,12 +419,12 @@ def combine(data_list: List[PlotData]) -> PlotData:
 
 if __name__ == "__main__":
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\01_08_2025"
-    dir_path_str = r"D:\PythonProjects\HUB_LOGS\20_10_2025_cut_16_10"
+    dir_path_str = r"D:\PythonProjects\HUB_LOGS\28_07_2025"
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\18_08_2025"
-    start_date = datetime.datetime(2025, 10, 16, 13, 21, 0)
+    start_date = datetime.datetime(2025, 7, 25, 12, 45, 0)
     start_date_epoch = start_date.timestamp()
 
-    end_date = datetime.datetime(2025, 10, 19, 13, 22, 0)
+    end_date = datetime.datetime(2025, 7, 28, 12, 50, 0)
     end_date_epoch = end_date.timestamp()
 
     dir_path = Path(dir_path_str)
@@ -591,6 +591,24 @@ if __name__ == "__main__":
     u_set_sipm_slave_string = data_combined.u_set_sipm_slave.astype(dtype)
     u_set_sipm_slave_string.resize(max_elem)
 
+    binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
+                                header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
+
+    start_time = pd.Timestamp("1900-01-01 00:00:00")
+    # zero_time = pd.Timestamp("00:00:00")
+    counter = 0
+    time_series = [0]
+    length = len(binder_data_df) - 1
+    while counter < length:
+        if counter == 0:
+            result = binder_data_df['Length'][counter] - start_time
+        else:
+            result += (binder_data_df['Length'][counter] - start_time)
+        time_series.append(result.total_seconds()/3600)
+        counter += 1
+    u_set_period_string = pd.to_datetime(result).astype(dtype)
+    u_set_binder_string = binder_data_df['Value'].astype(dtype)
+
     dict_to_csv = {'SiPM Master Temperature period [h]': np_rtc_t_period_master_h_string,
      'SiPM Master Temperature [C]': t_sipm_master_string,
      'SiPM Master Voltage period [h]': np_rtc_u_period_master_h_string,
@@ -602,26 +620,14 @@ if __name__ == "__main__":
      'SiPM Slave Voltage period [h]': np_rtc_u_period_slave_h_string,
      'SiPM Slave Voltage [V]': u_sipm_slave_string,
      'SiPM Slave Set Voltage period [h]': np_rtc_u_set_period_slave_h_string,
-     'SiPM Slave Set Voltage [V]': u_set_sipm_slave_string
+     'SiPM Slave Set Voltage [V]': u_set_sipm_slave_string,
+     'Binder Set Voltage period [h]': u_set_period_string,
+     'Binder Set Voltage [V]': u_set_binder_string
      }
 
     data_frame_to_csv = pd.DataFrame(dict_to_csv)
-    data_frame_to_csv.to_csv("temperature_voltage_16_10_2025.csv")
+    data_frame_to_csv.to_csv("temperature_voltage_binder_25_07_2025.csv")
 
-    binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
-                                header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
-    start_time = pd.Timestamp("1900-01-01 00:00:00")
-    zero_time = pd.Timestamp("00:00:00")
-    counter = 0
-    time_series = [0]
-    length = len(binder_data_df) - 1
-    while counter < length:
-        if counter == 0:
-            result = binder_data_df['Length'][counter] - start_time
-        else:
-            result += (binder_data_df['Length'][counter] - start_time)
-        time_series.append(result.total_seconds()/3600)
-        counter += 1
 
     fig, ax_temperature = plt.subplots()
     ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
