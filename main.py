@@ -8,6 +8,9 @@ import numpy as np
 from pathlib import Path
 import datetime
 
+from pandas.compat.numpy import np_long
+
+
 # from matplotlib.pyplot import plot_date
 
 
@@ -421,10 +424,14 @@ if __name__ == "__main__":
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\01_08_2025"
     dir_path_str = r"D:\PythonProjects\HUB_LOGS\28_07_2025"
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\18_08_2025"
-    start_date = datetime.datetime(2025, 7, 25, 12, 45, 0)
+    start_shift = datetime.timedelta(hours=0)
+    print("start shift=", start_shift)
+    start_date = datetime.datetime(2025, 7, 25, 12, 45, 0) + start_shift
     start_date_epoch = start_date.timestamp()
 
-    end_date = datetime.datetime(2025, 7, 28, 12, 50, 0)
+    end_shift = datetime.timedelta(hours=0)
+    print("end shift=", end_shift)
+    end_date = datetime.datetime(2025, 7, 28, 12, 50, 0) - end_shift
     end_date_epoch = end_date.timestamp()
 
     dir_path = Path(dir_path_str)
@@ -599,15 +606,24 @@ if __name__ == "__main__":
     counter = 0
     time_series = [0]
     length = len(binder_data_df) - 1
+    beginning_time_seconds = 1200
+    end_time_seconds = 7200
+    result_seconds = 0
     while counter < length:
         if counter == 0:
             result = binder_data_df['Length'][counter] - start_time
         else:
             result += (binder_data_df['Length'][counter] - start_time)
-        time_series.append(result.total_seconds()/3600)
+            result_seconds = result.total_seconds()
+        if result_seconds >= beginning_time_seconds and result_seconds < end_time_seconds:
+            time_series.append((result_seconds - beginning_time_seconds)/3600)
         counter += 1
-    u_set_period_string = pd.to_datetime(result).astype(dtype)
-    u_set_binder_string = binder_data_df['Value'].astype(dtype)
+    np_u_set_period_string = np.array(time_series, dtype=dtype)
+    np_u_set_period_string.resize(max_elem)
+    binder_data_df_filtered = binder_data_df[((binder_data_df['Length'] - start_time).dt.total_seconds() >= beginning_time_seconds)
+                                             & ((binder_data_df['Length'] - start_time).dt.total_seconds() < end_time_seconds)]
+    u_set_binder_string = np.array(binder_data_df['Value'], dtype=dtype)
+    u_set_binder_string.resize(max_elem)
 
     dict_to_csv = {'SiPM Master Temperature period [h]': np_rtc_t_period_master_h_string,
      'SiPM Master Temperature [C]': t_sipm_master_string,
@@ -621,7 +637,7 @@ if __name__ == "__main__":
      'SiPM Slave Voltage [V]': u_sipm_slave_string,
      'SiPM Slave Set Voltage period [h]': np_rtc_u_set_period_slave_h_string,
      'SiPM Slave Set Voltage [V]': u_set_sipm_slave_string,
-     'Binder Set Voltage period [h]': u_set_period_string,
+     'Binder Set Voltage period [h]': np_u_set_period_string,
      'Binder Set Voltage [V]': u_set_binder_string
      }
 
@@ -630,7 +646,7 @@ if __name__ == "__main__":
 
 
     fig, ax_temperature = plt.subplots()
-    ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
+    ax_temperature.plot(time_series, binder_data_df_filtered['Value'], label='Binder Temperature', color='red')
     ax_temperature.set_xlabel('time [h]')
     ax_temperature.set_ylabel('Temperature [°C]')
     ax_temperature.set_title("Binder Temperature and SiPM Temperature")
