@@ -625,6 +625,11 @@ if __name__ == "__main__":
     u_set_binder_string = np.array(binder_data_df['Value'], dtype=dtype)
     u_set_binder_string.resize(max_elem)
 
+    print("binder_data_df_filtered[\'Value\']= ", binder_data_df_filtered['Value'])
+    print("binder_data_df_filtered[\'Length\']= ", binder_data_df_filtered['Length'])
+    print("time_series= ", time_series)
+    print("total seconds= " , (binder_data_df['Length'] - start_time).dt.total_seconds())
+
     dict_to_csv = {'SiPM Master Temperature period [h]': np_rtc_t_period_master_h_string,
      'SiPM Master Temperature [C]': t_sipm_master_string,
      'SiPM Master Voltage period [h]': np_rtc_u_period_master_h_string,
