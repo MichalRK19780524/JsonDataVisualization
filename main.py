@@ -424,15 +424,17 @@ if __name__ == "__main__":
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\01_08_2025"
     dir_path_str = r"D:\PythonProjects\HUB_LOGS\28_07_2025"
     # dir_path_str = r"D:\PythonProjects\HUB_LOGS\18_08_2025"
-    start_shift = datetime.timedelta(hours=0)
-    print("start shift=", start_shift)
-    start_date = datetime.datetime(2025, 7, 25, 12, 45, 0) + start_shift
-    start_date_epoch = start_date.timestamp()
+    start_shift = datetime.timedelta(hours=25)
+    print("start shift=", start_shift, type(start_shift))
+    print("start shift=", start_shift, "start shift seconds=", start_shift.seconds, type(start_shift))
+    start_date = datetime.datetime(2025, 7, 25, 12, 45, 0)
+    start_shifted_date_epoch = (start_date + start_shift).timestamp()
 
-    end_shift = datetime.timedelta(hours=0)
+    end_shift = datetime.timedelta(hours=32)
+    binder_shift = datetime.timedelta(hours=0)
     print("end shift=", end_shift)
-    end_date = datetime.datetime(2025, 7, 28, 12, 50, 0) - end_shift
-    end_date_epoch = end_date.timestamp()
+    end_date = datetime.datetime(2025, 7, 28, 12, 50, 0)
+    end_shifted_date_epoch = (end_date - end_shift).timestamp()
 
     dir_path = Path(dir_path_str)
     data_list = []
@@ -444,17 +446,17 @@ if __name__ == "__main__":
     u_sipm_master_mask_48 = data_combined.u_sipm_master > 48
     u_sipm_slave_mask_48 = data_combined.u_sipm_slave > 48
 
-    u_sipm_master_mask_date = (data_combined.rtc_u_timestamp_master > start_date_epoch) & (data_combined.rtc_u_timestamp_master < end_date_epoch)
-    u_sipm_slave_mask_date = (data_combined.rtc_u_timestamp_slave > start_date_epoch) & (data_combined.rtc_u_timestamp_slave < end_date_epoch)
+    u_sipm_master_mask_date = (data_combined.rtc_u_timestamp_master > start_shifted_date_epoch) & (data_combined.rtc_u_timestamp_master < end_shifted_date_epoch)
+    u_sipm_slave_mask_date = (data_combined.rtc_u_timestamp_slave > start_shifted_date_epoch) & (data_combined.rtc_u_timestamp_slave < end_shifted_date_epoch)
 
-    t_sipm_master_mask_date = (data_combined.rtc_t_timestamp_master > start_date_epoch) & (data_combined.rtc_t_timestamp_master < end_date_epoch)
-    t_sipm_slave_mask_date = (data_combined.rtc_t_timestamp_slave > start_date_epoch) & (data_combined.rtc_t_timestamp_slave < end_date_epoch)
+    t_sipm_master_mask_date = (data_combined.rtc_t_timestamp_master > start_shifted_date_epoch) & (data_combined.rtc_t_timestamp_master < end_shifted_date_epoch)
+    t_sipm_slave_mask_date = (data_combined.rtc_t_timestamp_slave > start_shifted_date_epoch) & (data_combined.rtc_t_timestamp_slave < end_shifted_date_epoch)
 
-    i_sipm_master_mask_date = (data_combined.rtc_i_timestamp_master > start_date_epoch) & (data_combined.rtc_i_timestamp_master < end_date_epoch)
-    i_sipm_slave_mask_date = (data_combined.rtc_i_timestamp_slave > start_date_epoch) & (data_combined.rtc_i_timestamp_slave < end_date_epoch)
+    i_sipm_master_mask_date = (data_combined.rtc_i_timestamp_master > start_shifted_date_epoch) & (data_combined.rtc_i_timestamp_master < end_shifted_date_epoch)
+    i_sipm_slave_mask_date = (data_combined.rtc_i_timestamp_slave > start_shifted_date_epoch) & (data_combined.rtc_i_timestamp_slave < end_shifted_date_epoch)
 
-    u_set_master_mask_date = (data_combined.rtc_u_set_timestamp_master > start_date_epoch) & (data_combined.rtc_u_set_timestamp_master < end_date_epoch)
-    u_set_slave_mask_date = (data_combined.rtc_u_set_timestamp_slave > start_date_epoch) & (data_combined.rtc_u_set_timestamp_slave < end_date_epoch)
+    u_set_master_mask_date = (data_combined.rtc_u_set_timestamp_master > start_shifted_date_epoch) & (data_combined.rtc_u_set_timestamp_master < end_shifted_date_epoch)
+    u_set_slave_mask_date = (data_combined.rtc_u_set_timestamp_slave > start_shifted_date_epoch) & (data_combined.rtc_u_set_timestamp_slave < end_shifted_date_epoch)
 
     data_combined.rtc_t_timestamp_master = data_combined.rtc_t_timestamp_master[t_sipm_master_mask_date]
     data_combined.rtc_u_timestamp_master = data_combined.rtc_u_timestamp_master[u_sipm_master_mask_48 & u_sipm_master_mask_date]
@@ -598,37 +600,54 @@ if __name__ == "__main__":
     u_set_sipm_slave_string = data_combined.u_set_sipm_slave.astype(dtype)
     u_set_sipm_slave_string.resize(max_elem)
 
-    binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
+    # binder_data_df = pd.read_csv("prog13 2025-07-22.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
+    #                             header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
+    binder_data_df = pd.read_csv("prog13 2025-07-22.prg", encoding="ISO-8859-1", sep="\t", decimal=",",
                                 header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
+    print("binder_data_df['Length']=", binder_data_df['Length'])
+    result = binder_data_df['Length'].str.split(':', expand=True)
+    duration = pd.to_timedelta(result[0].astype(int), unit='h') + pd.to_timedelta(result[1].astype(int), unit='m')
+    duration_houers = duration.apply(lambda x: x.total_seconds()/3600)
+    print("duration=", duration)
+    print("duration_houers=", duration_houers)
+    print("duration[24]=", duration[24])
+    print("duration_houers[24]=", duration_houers[24])
 
-    start_time = pd.Timestamp("1900-01-01 00:00:00")
-    # zero_time = pd.Timestamp("00:00:00")
-    counter = 0
-    time_series = [0]
-    length = len(binder_data_df) - 1
-    beginning_time_seconds = 1200
-    end_time_seconds = 7200
-    result_seconds = 0
-    while counter < length:
-        if counter == 0:
-            result = binder_data_df['Length'][counter] - start_time
-        else:
-            result += (binder_data_df['Length'][counter] - start_time)
-            result_seconds = result.total_seconds()
-        if result_seconds >= beginning_time_seconds and result_seconds < end_time_seconds:
-            time_series.append((result_seconds - beginning_time_seconds)/3600)
-        counter += 1
-    np_u_set_period_string = np.array(time_series, dtype=dtype)
+    # duration_houers = duration_houers.cumsum()
+    time_series = pd.concat([pd.Series([0]), duration_houers], ignore_index=True)
+    time_series = time_series.cumsum()
+    time_series_td = pd.to_timedelta(time_series, unit='h')
+    isInTimeInterval = (time_series_td >= start_shift) & (time_series_td <= end_date - start_date - end_shift)
+    time_series.where(isInTimeInterval, inplace=True)
+    time_series = time_series.dropna()
+
+    print("time_series=", time_series)
+    # counter = 0
+    # time_series = [0]
+    # length = len(binder_data_df) - 1
+    # while counter < length:
+    #     if counter == 0:
+    #         result = binder_data_df['Length'][counter] - start_time
+    #     else:
+    #         result += (binder_data_df['Length'][counter] - start_time)
+    #     time_series.append(result.total_seconds()/3600)
+    #     counter += 1
+    np_u_set_period_houers = np.array(time_series)
+    np_u_set_period_houers = np_u_set_period_houers - start_shift.total_seconds()/3600
+    print("np_u_set_period_houers=", np_u_set_period_houers)
+    np_u_set_period_string = np.array(np_u_set_period_houers, dtype=dtype)
+    print("np_u_set_period_string=", np_u_set_period_string)
     np_u_set_period_string.resize(max_elem)
-    binder_data_df_filtered = binder_data_df[((binder_data_df['Length'] - start_time).dt.total_seconds() >= beginning_time_seconds)
-                                             & ((binder_data_df['Length'] - start_time).dt.total_seconds() < end_time_seconds)]
-    u_set_binder_string = np.array(binder_data_df['Value'], dtype=dtype)
+    # np_u_set_period_houers.resize(max_elem)
+    print("binder_data_df['Value']=", binder_data_df['Value'])
+    print("binder_data_df['Value'].iloc[-1:]=", binder_data_df['Value'].iloc[-1:])
+    u_set_binder = pd.concat([binder_data_df['Value'], binder_data_df['Value'].iloc[-1:]], ignore_index=True)
+    u_set_binder.where(isInTimeInterval, inplace=True)
+    u_set_binder.dropna(inplace=True)
+    print("type(u_set_binder)=", type(u_set_binder))
+    u_set_binder_string = np.array(u_set_binder, dtype=dtype)
+    print("u_set_binder=", u_set_binder)
     u_set_binder_string.resize(max_elem)
-
-    print("binder_data_df_filtered[\'Value\']= ", binder_data_df_filtered['Value'])
-    print("binder_data_df_filtered[\'Length\']= ", binder_data_df_filtered['Length'])
-    print("time_series= ", time_series)
-    print("total seconds= " , (binder_data_df['Length'] - start_time).dt.total_seconds())
 
     dict_to_csv = {'SiPM Master Temperature period [h]': np_rtc_t_period_master_h_string,
      'SiPM Master Temperature [C]': t_sipm_master_string,
@@ -642,27 +661,24 @@ if __name__ == "__main__":
      'SiPM Slave Voltage [V]': u_sipm_slave_string,
      'SiPM Slave Set Voltage period [h]': np_rtc_u_set_period_slave_h_string,
      'SiPM Slave Set Voltage [V]': u_set_sipm_slave_string,
-     'Binder Set Voltage period [h]': np_u_set_period_string,
-     'Binder Set Voltage [V]': u_set_binder_string
+     'Binder Set Temperature period [h]': np_u_set_period_string,
+     'Binder Set Temperature [C]': u_set_binder_string
      }
 
     data_frame_to_csv = pd.DataFrame(dict_to_csv)
     data_frame_to_csv.to_csv("temperature_voltage_binder_25_07_2025.csv")
 
 
-    fig, ax_temperature = plt.subplots()
-    ax_temperature.plot(time_series, binder_data_df_filtered['Value'], label='Binder Temperature', color='red')
+    fig_binder, ax_temperature = plt.subplots()
+    ax_temperature.plot(np_u_set_period_houers, u_set_binder, label='Binder Temperature', color='red')
     ax_temperature.set_xlabel('time [h]')
     ax_temperature.set_ylabel('Temperature [°C]')
-    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
     ax_temperature.grid(True)
     ax_temperature.legend(loc='lower center')
-    ax_temperature.set_xlabel('time [h]')
-    ax_temperature.set_ylabel('Temperature [°C]')
     ax_temperature.set_title("Binder Temperature and SiPM Temperature")
 
     ax_temperature.grid(True)
 
-    fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
+    # fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
     plt.show()
 
