@@ -1,11 +1,13 @@
 # from os import times
 from os import times_result
+from typing import Any
 
 import msgspec
 from matplotlib import pyplot as plt
 from enum import Flag, auto
 import pandas as pd
 import numpy as np
+from itertools import product
 from IPython.display import display
 
 # from matplotlib.pyplot import plot_date
@@ -81,10 +83,11 @@ class MeasurementParameters:
                 f"afeMaster={self.afeMaster}, "
                 f"afeSlave={self.afeSlave}")
 
+
 class PlotData:
-    def __init__(self, u_timestamp_master, u_sipm_master, i_timestamp_master, i_sipm_master, t_timestamp_master,
-                 t_sipm_master, u_timestamp_slave, u_sipm_slave, i_timestamp_slave, i_sipm_slave, t_timestamp_slave, t_sipm_slave,
-                 measurement_parameters: MeasurementParameters):
+    def __init__(self, u_timestamp_master=None, u_sipm_master=None, i_timestamp_master=None, i_sipm_master=None, t_timestamp_master=None,
+                 t_sipm_master=None, u_timestamp_slave=None, u_sipm_slave=None, i_timestamp_slave=None, i_sipm_slave=None, t_timestamp_slave=None, t_sipm_slave=None,
+                 measurement_parameters=MeasurementParameters):
         self.u_timestamp_master = u_timestamp_master
         self.u_sipm_master = u_sipm_master
         self.i_timestamp_master = i_timestamp_master
@@ -137,28 +140,36 @@ class PlotData:
 
 both =  Type.SLAVE | Type.MASTER
 all_modes = Mode.U | Mode.I | Mode.T
-def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) -> PlotData:
+
+def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) -> dict[int, PlotData]:
+    return_data  = dict[int, PlotData]()
+
+    timestamp_slave_u = np.array([])
+    u_sipm_slave = np.array([])
+    timestamp_master_u = np.array([])
+    u_sipm_master = np.array([])
+    timestamp_slave_i = np.array([])
+    i_sipm_slave = np.array([])
+    timestamp_master_i = np.array([])
+    i_sipm_master = np.array([])
+    timestamp_slave_t = np.array([])
+    t_sipm_slave = np.array([])
+    timestamp_master_t = np.array([])
+    t_sipm_master = np.array([])
+
     decoder = msgspec.json.Decoder()
     with open(file_path, 'r') as file:
         # counter = 0
-        timestamp_slave_u = np.array([])
-        u_sipm_slave = np.array([])
-        timestamp_master_u = np.array([])
-        u_sipm_master = np.array([])
-        timestamp_slave_i = np.array([])
-        i_sipm_slave = np.array([])
-        timestamp_master_i = np.array([])
-        i_sipm_master = np.array([])
-        timestamp_slave_t = np.array([])
-        t_sipm_slave = np.array([])
-        timestamp_master_t = np.array([])
-        t_sipm_master = np.array([])
 
         for line in file:
             try:
                 result = decoder.decode(line)
             except msgspec.DecodeError:
                 pass
+            plot_data = PlotData()
+            afe_master_parameters = AFEParameters()
+            afe_slave_parameters = AFEParameters()
+
             if result is not None :
                 message = result.get('message')
                 if message is not None and isinstance(message, dict):
@@ -187,7 +198,9 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
                                 t_br = afe_master.get("T_br [T]")
                                 avg_number = afe_master.get("Avg_number")
                                 v_br = afe_master.get("V_br [V]")
-                            afeMasterParameters = AFEParameters(v_opt, t_opt, u_measured_b, dv_dt, u_set_b, t_measured_a, dt, u_set_a, t_measured_b, u_measured_a, i_measured_b, i_measured_a, offset, t_br, avg_number, v_br)
+                            afe_master_parameters = AFEParameters(v_opt, t_opt, u_measured_b, dv_dt, u_set_b, t_measured_a, dt, u_set_a, t_measured_b, u_measured_a, i_measured_b, i_measured_a, offset, t_br, avg_number, v_br)
+                            plot_data.measurement_parameters.afeMaster = afe_master_parameters
+
 
                             afe_slave = msg.get("S")
                             if afe_slave is not None and isinstance(afe_slave, dict):
@@ -207,63 +220,183 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
                                 t_br = afe_slave.get("T_br [T]")
                                 avg_number = afe_slave.get("Avg_number")
                                 v_br = afe_slave.get("V_br [V]")
-                            afeSlaveParameters = AFEParameters(v_opt, t_opt, u_measured_b, dv_dt,
+                            afe_slave_parameters = AFEParameters(v_opt, t_opt, u_measured_b, dv_dt,
                                                                                 u_set_b, t_measured_a, dt, u_set_a,
                                                                                 t_measured_b, u_measured_a,
                                                                                 i_measured_b, i_measured_a, offset,
                                                                                 t_br, avg_number, v_br)
+                            plot_data.measurement_parameters.afeSlave = afe_slave_parameters
+                            plot_data.measurement_parameters.id = id
+
+                            # returnData[id] = plot_data
+                    device_id = message.get('device_id')
+                    if device_id==0:
+                        continue
+                    return_data.setdefault(device_id, PlotData())
                     retval = message.get('retval')
                     if retval is not None and isinstance(retval, dict) and 'average_data' in retval:
                         average_data = retval['average_data']
                         if Type.SLAVE in sipm_type:
                             if Mode.U in mode:
                                 if 'U_SIPM_MEAS1' in average_data:
-                                    timestamp_slave_u = np.append(timestamp_slave_u, result.get("timestamp"))
-                                    u_sipm_slave = np.append(u_sipm_slave, average_data.get("U_SIPM_MEAS1"))
+                                    if return_data[device_id].u_timestamp_slave is None:
+                                        return_data[device_id].u_timestamp_slave = np.array([result.get("rtc_timestamp")])
+                                    else:
+                                        return_data[device_id].u_timestamp_slave = np.append(return_data[device_id].u_timestamp_slave, result.get("rtc_timestamp"))
+                                    if return_data[device_id].u_sipm_slave is None:
+                                        return_data[device_id].u_sipm_slave = np.array([average_data.get("U_SIPM_MEAS1")])
+                                    else:
+                                        return_data[device_id].u_sipm_slave  = np.append(return_data[device_id].u_sipm_slave,  average_data.get("U_SIPM_MEAS1"))
                             if Mode.I in mode:
                                 if 'I_SIPM_MEAS1' in average_data:
-                                    timestamp_slave_i = np.append(timestamp_slave_i, result.get("timestamp"))
-                                    i_sipm_slave = np.append(i_sipm_slave, average_data.get("I_SIPM_MEAS1"))
+                                    if return_data[device_id].i_timestamp_slave is None:
+                                        return_data[device_id].i_timestamp_slave = np.array([result.get("rtc_timestamp")])
+                                    else:
+                                        return_data[device_id].i_timestamp_slave= np.append(return_data[device_id].i_timestamp_slave, result.get("rtc_timestamp"))
+                                    if return_data[device_id].i_sipm_slave is None:
+                                        return_data[device_id].i_sipm_slave = np.array([average_data.get("I_SIPM_MEAS1")])
+                                    else:
+                                        return_data[device_id].i_sipm_slave = np.append(return_data[device_id].i_sipm_slave, average_data.get("I_SIPM_MEAS1"))
                             if Mode.T in mode:
                                 if 'TEMP_EXT' in average_data:
-                                    timestamp_slave_t = np.append(timestamp_slave_t, result.get("timestamp"))
-                                    t_sipm_slave = np.append(t_sipm_slave, average_data.get("TEMP_EXT"))
+                                    if return_data[device_id].t_timestamp_slave is None:
+                                        return_data[device_id].t_timestamp_slave = np.array([result.get("rtc_timestamp")])
+                                    else:
+                                        return_data[device_id].t_timestamp_slave = np.append(return_data[device_id].t_timestamp_slave, result.get("rtc_timestamp"))
+                                    if return_data[device_id].t_sipm_slave is None:
+                                        return_data[device_id].t_sipm_slave = np.array([average_data.get("TEMP_EXT")])
+                                    else:
+                                        return_data[device_id].t_sipm_slave = np.append(return_data[device_id].t_sipm_slave, average_data.get("TEMP_EXT"))
+
                         if Type.MASTER in sipm_type:
                             if Mode.U in mode:
                                 if 'U_SIPM_MEAS0' in average_data:
-                                    timestamp_master_u = np.append(timestamp_master_u, result.get("timestamp"))
-                                    u_sipm_master = np.append(u_sipm_master, average_data.get("U_SIPM_MEAS0"))
+                                    if return_data[device_id].u_timestamp_master is None:
+                                        return_data[device_id].u_timestamp_master = np.array([result.get("rtc_timestamp")])
+                                    else:
+                                        return_data[device_id].u_timestamp_master  = np.append(return_data[device_id].u_timestamp_master, result.get("rtc_timestamp"))
+                                    if return_data[device_id].u_sipm_master is None:
+                                        return_data[device_id].u_sipm_master = np.array([average_data.get("U_SIPM_MEAS0")])
+                                    else:
+                                        return_data[device_id].u_sipm_master  = np.append(return_data[device_id].u_sipm_master , average_data.get("U_SIPM_MEAS0"))
                             if Mode.I in mode:
                                 if 'I_SIPM_MEAS0' in average_data:
-                                    timestamp_master_i = np.append(timestamp_master_i, result.get("timestamp"))
-                                    i_sipm_master = np.append(i_sipm_master, average_data.get("I_SIPM_MEAS0"))
+                                    if return_data[device_id].i_timestamp_master is None:
+                                        return_data[device_id].i_timestamp_master = np.array([result.get("rtc_timestamp")])
+                                    else:
+                                        return_data[device_id].i_timestamp_master = np.append(return_data[device_id].i_timestamp_master, result.get("rtc_timestamp"))
+                                    if return_data[device_id].i_sipm_master is None:
+                                        return_data[device_id].i_sipm_master = np.array([average_data.get("I_SIPM_MEAS0")])
+                                    else:
+                                        return_data[device_id].i_sipm_master = np.append(return_data[device_id].i_sipm_master, average_data.get("I_SIPM_MEAS0"))
                             if Mode.T in mode:
                                 if 'TEMP_LOCAL' in average_data:
-                                    timestamp_master_t = np.append(timestamp_master_t, result.get("timestamp"))
-                                    t_sipm_master = np.append(t_sipm_master, average_data.get("TEMP_LOCAL"))
+                                    if return_data[device_id].t_timestamp_master is None:
+                                        return_data[device_id].t_timestamp_master = np.array([result.get("rtc_timestamp")])
+                                    else:
+                                        return_data[device_id].t_timestamp_master = np.append(return_data[device_id].t_timestamp_master, result.get("rtc_timestamp"))
+                                    if return_data[device_id].t_sipm_master is None:
+                                        return_data[device_id].t_sipm_master = np.array([average_data.get("TEMP_LOCAL")])
+                                    else:
+                                        return_data[device_id].t_sipm_master = np.append(return_data[device_id].t_sipm_master, average_data.get("TEMP_LOCAL"))
+
+                    # plot_data = PlotData(u_timestamp_master=timestamp_master_u,
+                    #                      u_sipm_master=u_sipm_master,
+                    #                      i_timestamp_master=timestamp_master_i,
+                    #                      i_sipm_master=i_sipm_master,
+                    #                      t_timestamp_master=timestamp_master_t,
+                    #                      t_sipm_master=t_sipm_master,
+                    #                      u_timestamp_slave=timestamp_slave_u,
+                    #                      u_sipm_slave=u_sipm_slave,
+                    #                      i_timestamp_slave=timestamp_slave_i,
+                    #                      i_sipm_slave=i_sipm_slave,
+                    #                      t_timestamp_slave=timestamp_slave_t,
+                    #                      t_sipm_slave=t_sipm_slave,
+                    #                      measurement_parameters=MeasurementParameters(id, afe_master_parameters,
+                    #                                                                   afe_slave_parameters))
     # print(measurement_parameters)
-    return PlotData(u_timestamp_master=timestamp_master_u,
-                    u_sipm_master=u_sipm_master,
-                    i_timestamp_master=timestamp_master_i,
-                    i_sipm_master=i_sipm_master,
-                    t_timestamp_master=timestamp_master_t,
-                    t_sipm_master=t_sipm_master,
-                    u_timestamp_slave=timestamp_slave_u,
-                    u_sipm_slave=u_sipm_slave,
-                    i_timestamp_slave=timestamp_slave_i,
-                    i_sipm_slave=i_sipm_slave,
-                    t_timestamp_slave=timestamp_slave_t,
-                    t_sipm_slave=t_sipm_slave,
-                    measurement_parameters=MeasurementParameters(id, afeMasterParameters, afeSlaveParameters))
+    return return_data
+
+
+def write_to_csv(return_data: dict[int, PlotData], file_path: str):
+
+    all_series = []
+
+    for key, plot_data in return_data.items():
+        series_t_timestamp_master = pd.Series(
+            pd.to_datetime(plot_data.t_timestamp_master, unit='s'),
+            name=(key, 'timestamp T', 'master')
+        )
+        series_t_master = pd.Series(
+            plot_data.t_sipm_master,
+            name=(key, 'T', 'master')
+        )
+        series_u_timestamp_master = pd.Series(
+            pd.to_datetime(plot_data.u_timestamp_master, unit='s'),
+            name=(key, 'timestamp U', 'master')
+        )
+        series_u_master = pd.Series(
+            plot_data.u_sipm_master,
+            name=(key, 'U', 'master')
+        )
+        series_i_timestamp_master = pd.Series(
+            pd.to_datetime(plot_data.i_timestamp_master, unit='s'),
+            name=(key, 'timestamp I', 'master')
+        )
+        series_i_master = pd.Series(
+            plot_data.i_sipm_master,
+            name=(key, 'I', 'master')
+        )
+
+        series_t_timestamp_slave = pd.Series(
+            pd.to_datetime(plot_data.t_timestamp_slave, unit='s'),
+            name=(key, 'timestamp T', 'slave')
+        )
+        series_t_slave = pd.Series(
+            plot_data.t_sipm_slave,
+            name=(key, 'T',  'slave')
+        )
+        series_u_timestamp_slave = pd.Series(
+            pd.to_datetime(plot_data.u_timestamp_slave, unit='s'),
+            name=(key, 'timestamp U', 'slave')
+        )
+        series_u_slave = pd.Series(
+            plot_data.u_sipm_slave,
+            name=(key, 'U', 'slave')
+        )
+        series_i_timestamp_slave = pd.Series(
+            pd.to_datetime(plot_data.i_timestamp_slave, unit='s'),
+            name=(key, 'timestamp I', 'slave')
+        )
+        series_i_slave = pd.Series(
+            plot_data.i_sipm_slave,
+            name=(key, 'I', 'slave')
+        )
+
+        all_series.extend([
+            series_t_timestamp_master, series_t_master,
+            series_u_timestamp_master, series_u_master,
+            series_i_timestamp_master, series_i_master,
+            series_t_timestamp_slave, series_t_slave,
+            series_u_timestamp_slave, series_u_slave,
+            series_i_timestamp_slave, series_i_slave
+
+        ])
+
+    df = pd.concat(all_series, axis=1)
+    df.to_csv(file_path, index=False)
+
 
 if __name__ == "__main__":
-    plot_data = read_file("log_6.json")
-    binder_data_df = pd.read_csv("prog12 2025-05-30.prg", encoding="ISO-8859-1", sep="\t", decimal=",", parse_dates=['Length'], date_format="%H:%M",
-                                header=0, skiprows=[0, 1, 2, 4], usecols=['Value', 'Length'])
+    filename = "log_20260901_081734.json"
+    return_data = read_file(filename)
+    write_to_csv(return_data, filename.split('.')[0] + ".csv")
+
+
     # print(binder_data_df)
     # print(binder_data_df.info(memory_usage='deep'))
-    start_time = pd.Timestamp("1900-01-01 00:00:00")
-    zero_time = pd.Timestamp("00:00:00")
+    # start_time = pd.Timestamp("1900-01-01 00:00:00")
+    # zero_time = pd.Timestamp("00:00:00")
     # display(start_time)
     # display(zero_time)
     # time_stamp = binder_data_df['Length'][1]
@@ -277,42 +410,44 @@ if __name__ == "__main__":
     # display(suma)
     # display(type(suma))
     # display(binder_data_df['Length'])
-    counter = 0
-    time_series = [0]
-    result = 0
-    length = len(binder_data_df) - 1
-    while counter < length:
-        if counter == 0:
-            result = binder_data_df['Length'][counter] - start_time
-        else:
-            result += (binder_data_df['Length'][counter] - start_time)
-        time_series.append(result.total_seconds()/3600)
-        counter += 1
-    np_t_timestamp_master_h = plot_data.t_timestamp_master / 1000 / 3600
-    fig, ax_temperature = plt.subplots()
-    ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
-    ax_temperature.plot(np_t_timestamp_master_h, plot_data.t_sipm_master, label='SiPM Master Temperature', color='orange')
-    ax_temperature.set_xlabel('time [h]')
-    ax_temperature.set_ylabel('Temperature [°C]')
-    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
-    ax_temperature.set_xlim(left=-2, right=24)
-    ax_temperature.grid(True)
-    ax_voltage = ax_temperature.twinx()
-    # ax_temperature.legend(loc='lower center')
-    np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
-    ax_temperature.set_xlabel('time [h]')
-    ax_temperature.set_ylabel('Temperature [°C]')
-    ax_temperature.set_title("Binder Temperature and SiPM Temperature")
-    ax_temperature.grid(True)
-    # ax_temperature.legend(loc='lower center')
-    np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
-    mask = plot_data.u_sipm_master > 48
-    np_u_timestamp_master_h = np_u_timestamp_master_h[mask]
-    plot_data.u_sipm_master = plot_data.u_sipm_master[mask]
-    ax_voltage.set_ylabel('Voltage [V]')
-    ax_voltage.plot(np_u_timestamp_master_h, plot_data.u_sipm_master, label='SiPM Voltage Master', color='blue')
-    fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
-    plt.show()
+    # counter = 0
+    # time_series = [0]
+    # result = 0
+    # length = len(binder_data_df) - 1
+    # while counter < length:
+    #     if counter == 0:
+    #         result = binder_data_df['Length'][counter] - start_time
+    #     else:
+    #         result += (binder_data_df['Length'][counter] - start_time)
+    #     time_series.append(result.total_seconds()/3600)
+    #     counter += 1
+
+    # for key, plot_data in return_data.items():
+    #     np_t_timestamp_master_h = plot_data.t_timestamp_master / 1000 / 3600
+    #     fig, ax_temperature = plt.subplots()
+    #     # ax_temperature.plot(time_series, binder_data_df['Value'], label='Binder Temperature', color='red')
+    #     ax_temperature.plot(np_t_timestamp_master_h, plot_data.t_sipm_master, label='SiPM Master Temperature', color='orange')
+    #     ax_temperature.set_xlabel('time [h]')
+    #     ax_temperature.set_ylabel('Temperature [°C]')
+    #     ax_temperature.set_title("Binder Temperature and SiPM Temperature")
+    #     ax_temperature.set_xlim(left=-2, right=24)
+    #     ax_temperature.grid(True)
+    #     ax_voltage = ax_temperature.twinx()
+    #     # ax_temperature.legend(loc='lower center')
+    #     np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
+    #     ax_temperature.set_xlabel('time [h]')
+    #     ax_temperature.set_ylabel('Temperature [°C]')
+    #     ax_temperature.set_title("Binder Temperature and SiPM Temperature")
+    #     ax_temperature.grid(True)
+    #     # ax_temperature.legend(loc='lower center')
+    #     np_u_timestamp_master_h = plot_data.u_timestamp_master / 1000 / 3600
+    #     mask = plot_data.u_sipm_master > 48
+    #     np_u_timestamp_master_h = np_u_timestamp_master_h[mask]
+    #     plot_data.u_sipm_master = plot_data.u_sipm_master[mask]
+    #     ax_voltage.set_ylabel('Voltage [V]')
+    #     ax_voltage.plot(np_u_timestamp_master_h, plot_data.u_sipm_master, label='SiPM Voltage Master', color='blue')
+    #     fig.legend(bbox_to_anchor=(0.5,0.2), loc='center') #bbox_to_anchor=(1,1), bbox_transform=ax_temperature.transAxes ,
+    # plt.show()
     # fig_master_u, ax_master_u = plt.subplots()
     # ax_master_u.plot(plot_data.u_timestamp_master, plot_data.u_sipm_master)
     # ax_master_u.set_ylim(55.0, 55.25)
