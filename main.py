@@ -10,25 +10,28 @@ import numpy as np
 from itertools import product
 from IPython.display import display
 
+
 # from matplotlib.pyplot import plot_date
 
 
-class Mode(Flag):   # which physical quantity to read
-    I = auto()      #   current
-    U = auto()      #   voltage
-    T = auto()      #   temperature
+class Mode(Flag):  # which physical quantity to read
+    I = auto()  # current
+    U = auto()  # voltage
+    T = auto()  # temperature
 
-class Type(Flag):   # which board(s) to read
+
+class Type(Flag):  # which board(s) to read
     MASTER = auto()
-    SLAVE  = auto()
+    SLAVE = auto()
+
 
 class AFEParameters:
-    def __init__(self, v_opt: float=0, t_opt: float=0,
-                 u_measured_b: float=0, dv_dt: float=0,
-                 u_set_b: float=0, t_measured_a: float=0, dt: float=0,
-                 u_set_a: float=0, t_measured_b: float=0, u_measured_a: float=0,
-                 i_measured_b: float=0, i_measured_a: float=0, offset: int=0,
-                 t_br: float=0, avg_number: int=0, v_br: float=0):
+    def __init__(self, v_opt: float = 0, t_opt: float = 0,
+                 u_measured_b: float = 0, dv_dt: float = 0,
+                 u_set_b: float = 0, t_measured_a: float = 0, dt: float = 0,
+                 u_set_a: float = 0, t_measured_b: float = 0, u_measured_a: float = 0,
+                 i_measured_b: float = 0, i_measured_a: float = 0, offset: int = 0,
+                 t_br: float = 0, avg_number: int = 0, v_br: float = 0):
         self.v_opt = v_opt
         self.t_opt = t_opt
         self.u_measured_b = u_measured_b
@@ -65,8 +68,9 @@ class AFEParameters:
                 f"avg_number={self.avg_number}, "
                 f"v_br={self.v_br})")
 
+
 class MeasurementParameters:
-    def __init__(self, id: int=0, afeMaster: AFEParameters=AFEParameters, afeSlave: AFEParameters=AFEParameters):
+    def __init__(self, id: int = 0, afeMaster: AFEParameters = AFEParameters, afeSlave: AFEParameters = AFEParameters):
         self.id = id
         self.afeMaster = afeMaster
         self.afeSlave = afeSlave
@@ -85,8 +89,10 @@ class MeasurementParameters:
 
 
 class PlotData:
-    def __init__(self, u_timestamp_master=None, u_sipm_master=None, i_timestamp_master=None, i_sipm_master=None, t_timestamp_master=None,
-                 t_sipm_master=None, u_timestamp_slave=None, u_sipm_slave=None, i_timestamp_slave=None, i_sipm_slave=None, t_timestamp_slave=None, t_sipm_slave=None,
+    def __init__(self, u_timestamp_master=None, u_sipm_master=None, i_timestamp_master=None, i_sipm_master=None,
+                 t_timestamp_master=None,
+                 t_sipm_master=None, u_timestamp_slave=None, u_sipm_slave=None, i_timestamp_slave=None,
+                 i_sipm_slave=None, t_timestamp_slave=None, t_sipm_slave=None,
                  measurement_parameters=MeasurementParameters):
         self.u_timestamp_master = u_timestamp_master
         self.u_sipm_master = u_sipm_master
@@ -102,22 +108,21 @@ class PlotData:
         self.t_sipm_slave = t_sipm_slave
         self.measurement_parameters = measurement_parameters
 
-
     def __repr__(self):
         return (f"PlotData("
-            f"u_timestamp_master={self.u_timestamp_master}, "
-            f"u_sipm_master={self.u_sipm_master}, "
-            f"i_timestamp_master={self.i_timestamp_master}, "
-            f"i_sipm_master={self.i_sipm_master}, "
-            f"t_timestamp_master={self.t_timestamp_master}, "
-            f"t_sipm_master={self.t_sipm_master}, "
-            f"u_timestamp_slave={self.u_timestamp_slave}, "
-            f"u_sipm_slave={self.u_sipm_slave}, "
-            f"i_timestamp_slave={self.i_timestamp_slave}, "
-            f"i_sipm_slave={self.i_sipm_slave}, "
-            f"t_timestamp_slave={self.t_timestamp_slave}, "
-            f"t_sipm_slave={self.t_sipm_slave}, "
-            f"measurement_parameters={self.measurement_parameters})")
+                f"u_timestamp_master={self.u_timestamp_master}, "
+                f"u_sipm_master={self.u_sipm_master}, "
+                f"i_timestamp_master={self.i_timestamp_master}, "
+                f"i_sipm_master={self.i_sipm_master}, "
+                f"t_timestamp_master={self.t_timestamp_master}, "
+                f"t_sipm_master={self.t_sipm_master}, "
+                f"u_timestamp_slave={self.u_timestamp_slave}, "
+                f"u_sipm_slave={self.u_sipm_slave}, "
+                f"i_timestamp_slave={self.i_timestamp_slave}, "
+                f"i_sipm_slave={self.i_sipm_slave}, "
+                f"t_timestamp_slave={self.t_timestamp_slave}, "
+                f"t_sipm_slave={self.t_sipm_slave}, "
+                f"measurement_parameters={self.measurement_parameters})")
 
     def __str__(self):
         return (f"PlotData:\n"
@@ -138,24 +143,12 @@ class PlotData:
                 f"  Measurement Parameters: {self.measurement_parameters}")
 
 
-both =  Type.SLAVE | Type.MASTER
+both = Type.SLAVE | Type.MASTER
 all_modes = Mode.U | Mode.I | Mode.T
 
-def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) -> dict[int, PlotData]:
-    return_data  = dict[int, PlotData]()
 
-    timestamp_slave_u = np.array([])
-    u_sipm_slave = np.array([])
-    timestamp_master_u = np.array([])
-    u_sipm_master = np.array([])
-    timestamp_slave_i = np.array([])
-    i_sipm_slave = np.array([])
-    timestamp_master_i = np.array([])
-    i_sipm_master = np.array([])
-    timestamp_slave_t = np.array([])
-    t_sipm_slave = np.array([])
-    timestamp_master_t = np.array([])
-    t_sipm_master = np.array([])
+def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) -> dict[int, PlotData]:
+    return_data = dict[int, PlotData]()
 
     decoder = msgspec.json.Decoder()
     with open(file_path, 'r') as file:
@@ -170,67 +163,71 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
             afe_master_parameters = AFEParameters()
             afe_slave_parameters = AFEParameters()
 
-            if result is not None :
+            if result is not None:
                 message = result.get('message')
                 if message is not None and isinstance(message, dict):
                     info = message.get('info')
-                    if info == 'default_procedure':
-                        msg = message.get('msg')
-                        if msg is not None:
-                            # measurement_parameters.id = msg.get("ID")
-                            id = msg.get("ID")
-                            # print("msg is not None ", measurment_parameters.id)
-                            afe_master = msg.get("M")
-                            if afe_master is not None and isinstance(afe_master, dict):
-                                v_opt = afe_master.get("V_opt [V]")
-                                t_opt = afe_master.get("T_opt [T]")
-                                u_measured_b = afe_master.get("U_measured_b ")
-                                dv_dt = afe_master.get("dV/dT [V/T]")
-                                u_set_b = afe_master.get("U_set_b")
-                                t_measured_a = afe_master.get("T_measured_a")
-                                dt = afe_master.get("dT [C]")
-                                u_set_a = afe_master.get("U_set_a")
-                                t_measured_b = afe_master.get("T_measured_b")
-                                u_measured_a = afe_master.get("U_measured_a")
-                                i_measured_b = afe_master.get("I_measured_b")
-                                i_measured_a = afe_master.get("I_measured_a")
-                                offset = afe_master.get("offset [bit]")
-                                t_br = afe_master.get("T_br [T]")
-                                avg_number = afe_master.get("Avg_number")
-                                v_br = afe_master.get("V_br [V]")
-                            afe_master_parameters = AFEParameters(v_opt, t_opt, u_measured_b, dv_dt, u_set_b, t_measured_a, dt, u_set_a, t_measured_b, u_measured_a, i_measured_b, i_measured_a, offset, t_br, avg_number, v_br)
-                            plot_data.measurement_parameters.afeMaster = afe_master_parameters
-
-
-                            afe_slave = msg.get("S")
-                            if afe_slave is not None and isinstance(afe_slave, dict):
-                                v_opt = afe_slave.get("V_opt")
-                                t_opt = afe_slave.get("T_opt")
-                                u_measured_b = afe_slave.get("U_measured_b ")
-                                dv_dt = afe_slave.get("dV/dT [V/T]")
-                                u_set_b = afe_slave.get("U_set_b")
-                                t_measured_a = afe_slave.get("T_measured_a")
-                                dt = afe_slave.get("dT [C]")
-                                u_set_a = afe_slave.get("U_set_a")
-                                t_measured_b = afe_slave.get("T_measured_b")
-                                u_measured_a = afe_slave.get("U_measured_a")
-                                i_measured_b = afe_slave.get("I_measured_b")
-                                i_measured_a = afe_slave.get("I_measured_a")
-                                offset = afe_slave.get("offset [bit]")
-                                t_br = afe_slave.get("T_br [T]")
-                                avg_number = afe_slave.get("Avg_number")
-                                v_br = afe_slave.get("V_br [V]")
-                            afe_slave_parameters = AFEParameters(v_opt, t_opt, u_measured_b, dv_dt,
-                                                                                u_set_b, t_measured_a, dt, u_set_a,
-                                                                                t_measured_b, u_measured_a,
-                                                                                i_measured_b, i_measured_a, offset,
-                                                                                t_br, avg_number, v_br)
-                            plot_data.measurement_parameters.afeSlave = afe_slave_parameters
-                            plot_data.measurement_parameters.id = id
-
-                            # returnData[id] = plot_data
+                    #TODO tu są wczytywane parametry domyślne, które obecnie nie są wykorzystywane.
+                    # Poza tym dla wielu desek, to jest błednie robione ponieważ dane są nadpisywane z ostatniego odczytu zamiast zapisywać kod dla każdej deski oddzielnie
+                    # if info == 'default_procedure':
+                    #     msg = message.get('msg')
+                    #     if msg is not None:
+                    #         # measurement_parameters.id = msg.get("ID")
+                    #         id = msg.get("ID")
+                    #         # print("msg is not None ", measurment_parameters.id)
+                    #         afe_master = msg.get("M")
+                    #         if afe_master is not None and isinstance(afe_master, dict):
+                    #             v_opt = afe_master.get("V_opt [V]")
+                    #             t_opt = afe_master.get("T_opt [T]")
+                    #             u_measured_b = afe_master.get("U_measured_b ")
+                    #             dv_dt = afe_master.get("dV/dT [V/T]")
+                    #             u_set_b = afe_master.get("U_set_b")
+                    #             t_measured_a = afe_master.get("T_measured_a")
+                    #             dt = afe_master.get("dT [C]")
+                    #             u_set_a = afe_master.get("U_set_a")
+                    #             t_measured_b = afe_master.get("T_measured_b")
+                    #             u_measured_a = afe_master.get("U_measured_a")
+                    #             i_measured_b = afe_master.get("I_measured_b")
+                    #             i_measured_a = afe_master.get("I_measured_a")
+                    #             offset = afe_master.get("offset [bit]")
+                    #             t_br = afe_master.get("T_br [T]")
+                    #             avg_number = afe_master.get("Avg_number")
+                    #             v_br = afe_master.get("V_br [V]")
+                    #         afe_master_parameters = AFEParameters(v_opt, t_opt, u_measured_b, dv_dt, u_set_b,
+                    #                                               t_measured_a, dt, u_set_a, t_measured_b, u_measured_a,
+                    #                                               i_measured_b, i_measured_a, offset, t_br, avg_number,
+                    #                                               v_br)
+                    #         plot_data.measurement_parameters.afeMaster = afe_master_parameters
+                    #
+                    #         afe_slave = msg.get("S")
+                    #         if afe_slave is not None and isinstance(afe_slave, dict):
+                    #             v_opt = afe_slave.get("V_opt")
+                    #             t_opt = afe_slave.get("T_opt")
+                    #             u_measured_b = afe_slave.get("U_measured_b ")
+                    #             dv_dt = afe_slave.get("dV/dT [V/T]")
+                    #             u_set_b = afe_slave.get("U_set_b")
+                    #             t_measured_a = afe_slave.get("T_measured_a")
+                    #             dt = afe_slave.get("dT [C]")
+                    #             u_set_a = afe_slave.get("U_set_a")
+                    #             t_measured_b = afe_slave.get("T_measured_b")
+                    #             u_measured_a = afe_slave.get("U_measured_a")
+                    #             i_measured_b = afe_slave.get("I_measured_b")
+                    #             i_measured_a = afe_slave.get("I_measured_a")
+                    #             offset = afe_slave.get("offset [bit]")
+                    #             t_br = afe_slave.get("T_br [T]")
+                    #             avg_number = afe_slave.get("Avg_number")
+                    #             v_br = afe_slave.get("V_br [V]")
+                    #         afe_slave_parameters = AFEParameters(v_opt, t_opt, u_measured_b, dv_dt,
+                    #                                              u_set_b, t_measured_a, dt, u_set_a,
+                    #                                              t_measured_b, u_measured_a,
+                    #                                              i_measured_b, i_measured_a, offset,
+                    #                                              t_br, avg_number, v_br)
+                    #         plot_data.measurement_parameters.afeSlave = afe_slave_parameters
+                    #         plot_data.measurement_parameters.id = id
+                    #
+                    #         # returnData[id] = plot_data
                     device_id = message.get('device_id')
-                    if device_id==0:
+                    if device_id == 0:
                         continue
                     return_data.setdefault(device_id, PlotData())
                     retval = message.get('retval')
@@ -240,86 +237,93 @@ def read_file(file_path: str, mode: Mode = all_modes, sipm_type: Type = both) ->
                             if Mode.U in mode:
                                 if 'U_SIPM_MEAS1' in average_data:
                                     if return_data[device_id].u_timestamp_slave is None:
-                                        return_data[device_id].u_timestamp_slave = np.array([result.get("rtc_timestamp")])
+                                        return_data[device_id].u_timestamp_slave = np.array(
+                                            [result.get("rtc_timestamp")])
                                     else:
-                                        return_data[device_id].u_timestamp_slave = np.append(return_data[device_id].u_timestamp_slave, result.get("rtc_timestamp"))
+                                        return_data[device_id].u_timestamp_slave = np.append(
+                                            return_data[device_id].u_timestamp_slave, result.get("rtc_timestamp"))
                                     if return_data[device_id].u_sipm_slave is None:
-                                        return_data[device_id].u_sipm_slave = np.array([average_data.get("U_SIPM_MEAS1")])
+                                        return_data[device_id].u_sipm_slave = np.array(
+                                            [average_data.get("U_SIPM_MEAS1")])
                                     else:
-                                        return_data[device_id].u_sipm_slave  = np.append(return_data[device_id].u_sipm_slave,  average_data.get("U_SIPM_MEAS1"))
+                                        return_data[device_id].u_sipm_slave = np.append(
+                                            return_data[device_id].u_sipm_slave, average_data.get("U_SIPM_MEAS1"))
                             if Mode.I in mode:
                                 if 'I_SIPM_MEAS1' in average_data:
                                     if return_data[device_id].i_timestamp_slave is None:
-                                        return_data[device_id].i_timestamp_slave = np.array([result.get("rtc_timestamp")])
+                                        return_data[device_id].i_timestamp_slave = np.array(
+                                            [result.get("rtc_timestamp")])
                                     else:
-                                        return_data[device_id].i_timestamp_slave= np.append(return_data[device_id].i_timestamp_slave, result.get("rtc_timestamp"))
+                                        return_data[device_id].i_timestamp_slave = np.append(
+                                            return_data[device_id].i_timestamp_slave, result.get("rtc_timestamp"))
                                     if return_data[device_id].i_sipm_slave is None:
-                                        return_data[device_id].i_sipm_slave = np.array([average_data.get("I_SIPM_MEAS1")])
+                                        return_data[device_id].i_sipm_slave = np.array(
+                                            [average_data.get("I_SIPM_MEAS1")])
                                     else:
-                                        return_data[device_id].i_sipm_slave = np.append(return_data[device_id].i_sipm_slave, average_data.get("I_SIPM_MEAS1"))
+                                        return_data[device_id].i_sipm_slave = np.append(
+                                            return_data[device_id].i_sipm_slave, average_data.get("I_SIPM_MEAS1"))
                             if Mode.T in mode:
                                 if 'TEMP_EXT' in average_data:
                                     if return_data[device_id].t_timestamp_slave is None:
-                                        return_data[device_id].t_timestamp_slave = np.array([result.get("rtc_timestamp")])
+                                        return_data[device_id].t_timestamp_slave = np.array(
+                                            [result.get("rtc_timestamp")])
                                     else:
-                                        return_data[device_id].t_timestamp_slave = np.append(return_data[device_id].t_timestamp_slave, result.get("rtc_timestamp"))
+                                        return_data[device_id].t_timestamp_slave = np.append(
+                                            return_data[device_id].t_timestamp_slave, result.get("rtc_timestamp"))
                                     if return_data[device_id].t_sipm_slave is None:
                                         return_data[device_id].t_sipm_slave = np.array([average_data.get("TEMP_EXT")])
                                     else:
-                                        return_data[device_id].t_sipm_slave = np.append(return_data[device_id].t_sipm_slave, average_data.get("TEMP_EXT"))
+                                        return_data[device_id].t_sipm_slave = np.append(
+                                            return_data[device_id].t_sipm_slave, average_data.get("TEMP_EXT"))
 
                         if Type.MASTER in sipm_type:
                             if Mode.U in mode:
                                 if 'U_SIPM_MEAS0' in average_data:
                                     if return_data[device_id].u_timestamp_master is None:
-                                        return_data[device_id].u_timestamp_master = np.array([result.get("rtc_timestamp")])
+                                        return_data[device_id].u_timestamp_master = np.array(
+                                            [result.get("rtc_timestamp")])
                                     else:
-                                        return_data[device_id].u_timestamp_master  = np.append(return_data[device_id].u_timestamp_master, result.get("rtc_timestamp"))
+                                        return_data[device_id].u_timestamp_master = np.append(
+                                            return_data[device_id].u_timestamp_master, result.get("rtc_timestamp"))
                                     if return_data[device_id].u_sipm_master is None:
-                                        return_data[device_id].u_sipm_master = np.array([average_data.get("U_SIPM_MEAS0")])
+                                        return_data[device_id].u_sipm_master = np.array(
+                                            [average_data.get("U_SIPM_MEAS0")])
                                     else:
-                                        return_data[device_id].u_sipm_master  = np.append(return_data[device_id].u_sipm_master , average_data.get("U_SIPM_MEAS0"))
+                                        return_data[device_id].u_sipm_master = np.append(
+                                            return_data[device_id].u_sipm_master, average_data.get("U_SIPM_MEAS0"))
                             if Mode.I in mode:
                                 if 'I_SIPM_MEAS0' in average_data:
                                     if return_data[device_id].i_timestamp_master is None:
-                                        return_data[device_id].i_timestamp_master = np.array([result.get("rtc_timestamp")])
+                                        return_data[device_id].i_timestamp_master = np.array(
+                                            [result.get("rtc_timestamp")])
                                     else:
-                                        return_data[device_id].i_timestamp_master = np.append(return_data[device_id].i_timestamp_master, result.get("rtc_timestamp"))
+                                        return_data[device_id].i_timestamp_master = np.append(
+                                            return_data[device_id].i_timestamp_master, result.get("rtc_timestamp"))
                                     if return_data[device_id].i_sipm_master is None:
-                                        return_data[device_id].i_sipm_master = np.array([average_data.get("I_SIPM_MEAS0")])
+                                        return_data[device_id].i_sipm_master = np.array(
+                                            [average_data.get("I_SIPM_MEAS0")])
                                     else:
-                                        return_data[device_id].i_sipm_master = np.append(return_data[device_id].i_sipm_master, average_data.get("I_SIPM_MEAS0"))
+                                        return_data[device_id].i_sipm_master = np.append(
+                                            return_data[device_id].i_sipm_master, average_data.get("I_SIPM_MEAS0"))
                             if Mode.T in mode:
                                 if 'TEMP_LOCAL' in average_data:
                                     if return_data[device_id].t_timestamp_master is None:
-                                        return_data[device_id].t_timestamp_master = np.array([result.get("rtc_timestamp")])
+                                        return_data[device_id].t_timestamp_master = np.array(
+                                            [result.get("rtc_timestamp")])
                                     else:
-                                        return_data[device_id].t_timestamp_master = np.append(return_data[device_id].t_timestamp_master, result.get("rtc_timestamp"))
+                                        return_data[device_id].t_timestamp_master = np.append(
+                                            return_data[device_id].t_timestamp_master, result.get("rtc_timestamp"))
                                     if return_data[device_id].t_sipm_master is None:
-                                        return_data[device_id].t_sipm_master = np.array([average_data.get("TEMP_LOCAL")])
+                                        return_data[device_id].t_sipm_master = np.array(
+                                            [average_data.get("TEMP_LOCAL")])
                                     else:
-                                        return_data[device_id].t_sipm_master = np.append(return_data[device_id].t_sipm_master, average_data.get("TEMP_LOCAL"))
+                                        return_data[device_id].t_sipm_master = np.append(
+                                            return_data[device_id].t_sipm_master, average_data.get("TEMP_LOCAL"))
 
-                    # plot_data = PlotData(u_timestamp_master=timestamp_master_u,
-                    #                      u_sipm_master=u_sipm_master,
-                    #                      i_timestamp_master=timestamp_master_i,
-                    #                      i_sipm_master=i_sipm_master,
-                    #                      t_timestamp_master=timestamp_master_t,
-                    #                      t_sipm_master=t_sipm_master,
-                    #                      u_timestamp_slave=timestamp_slave_u,
-                    #                      u_sipm_slave=u_sipm_slave,
-                    #                      i_timestamp_slave=timestamp_slave_i,
-                    #                      i_sipm_slave=i_sipm_slave,
-                    #                      t_timestamp_slave=timestamp_slave_t,
-                    #                      t_sipm_slave=t_sipm_slave,
-                    #                      measurement_parameters=MeasurementParameters(id, afe_master_parameters,
-                    #                                                                   afe_slave_parameters))
-    # print(measurement_parameters)
     return return_data
 
 
 def write_to_csv(return_data: dict[int, PlotData], file_path: str):
-
     all_series = []
 
     for key, plot_data in return_data.items():
@@ -354,7 +358,7 @@ def write_to_csv(return_data: dict[int, PlotData], file_path: str):
         )
         series_t_slave = pd.Series(
             plot_data.t_sipm_slave,
-            name=(key, 'T',  'slave')
+            name=(key, 'T', 'slave')
         )
         series_u_timestamp_slave = pd.Series(
             pd.to_datetime(plot_data.u_timestamp_slave, unit='s'),
@@ -391,7 +395,6 @@ if __name__ == "__main__":
     filename = "log_20260901_081734.json"
     return_data = read_file(filename)
     write_to_csv(return_data, filename.split('.')[0] + ".csv")
-
 
     # print(binder_data_df)
     # print(binder_data_df.info(memory_usage='deep'))
